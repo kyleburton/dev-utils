@@ -1,0 +1,19 @@
+h1. Development (Unix Shell) Utilities
+
+h2. make-checkouts
+
+Leiningen helper to create a checkouts directory based on the dependencies in your @project.clj@ file.  It will search in your $HOME/projects folder for the project sources and create the appropriate symlinks.
+
+h1. Authors
+
+Joshua Crean <joshua.crean@gmail.com>
+Paul Santa Clara <kesserich1@gmail.com>
+Kyle Burton <kyle.burton@gmail.com>
+
+h1. License
+ *   The use and distribution terms for this software are covered by the
+ *   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+ *   which can be found in the file epl-v10.html at the root of this distribution.
+ *   By using this software in any fashion, you are agreeing to be bound by
+ * 	 the terms of this license.
+ *   You must not remove this notice, or any other, from this software.

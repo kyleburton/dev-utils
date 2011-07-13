@@ -1,0 +1,193 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'base_app'
+require 'find'
+require 'fileutils'
+
+# pulled from: https://gist.github.com/612311
+class SexpParser
+  def extract_string_literals( string )
+    string_literal_pattern = /"([^"\\]|\\.)*"/
+    string_replacement_token = "___+++STRING_LITERAL+++___"
+    # Find and extract all the string literals
+    string_literals = []
+    string.gsub(string_literal_pattern) {|x| string_literals << x}
+    # Replace all the string literals with our special placeholder token
+    string = string.gsub(string_literal_pattern, string_replacement_token)
+    # Return the modified string and the array of string literals
+    return [string, string_literals]
+  end
+
+  def tokenize_string( string )
+    string = string.gsub("(", " ( ")
+    string = string.gsub("[", " ( ")
+    string = string.gsub(")", " ) ")
+    string = string.gsub("]", " ) ")
+    token_array = string.split(" ")
+    return token_array
+  end
+
+  def restore_string_literals( token_array, string_literals )
+    return token_array.map do |x|
+      if(x == '___+++STRING_LITERAL+++___')
+        # Since we've detected that a string literal needs to be replaced we
+        # will grab the first available string from the string_literals array
+        string_literals.shift
+      else
+        # This is not a string literal so we need to just return the token as it is
+        x
+      end
+    end
+  end
+
+  # A helper method to take care of the repetitive stuff for us
+  def is_match?( string, pattern)
+    match = string.match(pattern)
+    return false unless match
+    # Make sure that the matched pattern consumes the entire token
+    match[0].length == string.length
+  end
+
+  # Detect a symbol
+  def is_symbol?( string )
+    # Anything other than parentheses, single or double quote and commas
+    return is_match?( string, /[^\"\'\,\(\)]+/ )
+  end
+
+  # Detect an integer literal
+  def is_integer_literal?( string )
+    # Any number of numerals optionally preceded by a plus or minus sign
+    return is_match?( string, /[\-\+]?[0-9]+/ )
+  end
+
+  # Detect a string literal
+  def is_string_literal?( string )
+    # Any characters except double quotes
+    # (except if preceded by a backslash), surrounded by quotes
+    return is_match?( string, /"([^"\\]|\\.)*"/)
+  end
+
+  def convert_tokens( token_array )
+    converted_tokens = []
+    token_array.each do |t|
+      converted_tokens << "(" and next if( t == "(" )
+      converted_tokens << ")" and next if( t == ")" )
+      converted_tokens << t.to_i and next if( is_integer_literal?(t) )
+      #converted_tokens << t.to_sym and next if( is_symbol?(t) )
+      converted_tokens << t.to_s and next if( is_symbol?(t) )
+      converted_tokens << eval(t) and next if( is_string_literal?(t) )
+      # If we haven't recognized the token by now we need to raise
+      # an exception as there are no more rules left to check against!
+      raise Exception, "Unrecognized token: #{t}"
+    end
+    return converted_tokens
+  end
+
+  def re_structure( token_array, offset = 0 )
+    struct = []
+    while( offset < token_array.length )
+      if(token_array[offset] == "(")
+        # Multiple assignment from the array that re_structure() returns
+        offset, tmp_array = re_structure(token_array, offset + 1)
+        struct << tmp_array
+      elsif(token_array[offset] == ")")
+        break
+      else
+        struct << token_array[offset]
+      end
+      offset += 1
+    end
+    return [offset, struct]
+  end
+
+  def parse( string )
+    string, string_literals = extract_string_literals( string )
+    token_array = tokenize_string( string )
+    token_array = restore_string_literals( token_array, string_literals )
+    token_array = convert_tokens( token_array )
+    s_expression = re_structure( token_array )[1]
+    return s_expression
+  end
+
+end
+
+
+class MakeCheckouts < BaseApp
+
+  def initialize
+    super
+    @checkouts_search_paths = ["#{ENV['HOME']}/projects"]
+  end
+
+  def get_deps_from_project_clj fn='project.clj'
+    exprs = SexpParser.new.parse(File.read(fn))
+    defproj, proj_name, version, *deps = *(exprs[0])
+    deps = Hash[*deps][":dependencies"]
+    deps.inject({}) do |m,pair|
+      dep_name,dep_ver = pair
+      m[dep_name] = dep_ver
+      m
+    end
+  end
+
+  def find_project_clj_files
+    if @project_clj_files
+      @project_clj_files 
+    else
+      @project_clj_files = []
+      @checkouts_search_paths.each do |path|
+        Find.find(path) do |f|
+          if f.end_with? "/project.clj"
+            @project_clj_files << f
+          end
+        end
+      end
+      @project_clj_files
+    end
+  end
+
+  def find_checkout dep_name
+    res = []
+    find_project_clj_files.each do |f|
+      if File.read(f).include? "defproject #{dep_name}"
+        res << f
+      end
+    end
+    if res.size > 1
+      raise "Error: found #{dep_name} more than 1x, not sure which one to symlink: #{res.inspect}"
+    end
+    if res.size == 1
+      File.dirname(res.first)
+    else
+      puts "No local project found for: #{dep_name}"
+      nil
+    end
+  end
+
+  def run
+    unless File.exist? 'checkouts'
+      FileUtils.mkdir 'checkouts'
+    end
+
+    unless File.exist? 'project.clj'
+      raise "Error: no project.clj file found."
+    end
+
+    deps = get_deps_from_project_clj
+    deps.keys.each do |dep_name|
+      src_file = find_checkout dep_name
+      unless src_file
+        puts "No source directory found for #{dep_name}"
+        next
+      end
+      dest_file = "./checkouts/#{File.basename(src_file)}"
+      next if File.exist? dest_file
+      puts "Linking #{dep_name} :: #{src_file} => #{dest_file}"
+      FileUtils.ln_s src_file, dest_file
+    end
+  end
+
+end
+
+MakeCheckouts.main
