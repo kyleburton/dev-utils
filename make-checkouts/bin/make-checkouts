@@ -160,7 +160,7 @@ class MakeCheckouts < BaseApp
     if res.size == 1
       File.dirname(res.first)
     else
-      puts "No local project found for: #{dep_name}"
+      puts "  No local project found for: #{dep_name}"
       nil
     end
   end
@@ -178,12 +178,12 @@ class MakeCheckouts < BaseApp
     deps.keys.each do |dep_name|
       src_file = find_checkout dep_name
       unless src_file
-        puts "No source directory found for #{dep_name}"
+        puts "  No source directory found for #{dep_name}"
         next
       end
       dest_file = "./checkouts/#{File.basename(src_file)}"
       next if File.exist? dest_file
-      puts "Linking #{dep_name} :: #{src_file} => #{dest_file}"
+      puts "  Linking #{dep_name} :: #{src_file} => #{dest_file}"
       FileUtils.ln_s src_file, dest_file
     end
   end
