@@ -8,6 +8,8 @@ class DevUtilsHelper
     @utilities = [
       {:name => 'make-checkouts',
        :binaries => %w[make-checkouts]},
+      {:name => 'named-screen',
+       :binaries => %w[named-screen]},
     ]
   end
 

@@ -1,0 +1,12 @@
+#!/bin/bash
+NAME="$1"
+PROJ="$2"
+
+if screen -ls | grep -q "$NAME"; then
+  screen -x "$NAME"
+else
+  if [ -n "$PROJ" ]; then
+    cd $HOME/projects/$PROJ
+  fi
+  screen -S "$NAME"
+fi
