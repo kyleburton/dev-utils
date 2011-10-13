@@ -129,8 +129,6 @@ class MakeCheckouts < BaseApp
       m[dep_name] = dep_ver
       m
     end
-  rescue
-    puts "Error parsing project.clj: #$!"
   end
 
   def find_project_clj_files
@@ -140,7 +138,8 @@ class MakeCheckouts < BaseApp
       @project_clj_files = []
       @checkouts_search_paths.each do |path|
         Find.find(path) do |f|
-          if f.end_with?("/project.clj") && !f.include?("/.rsync_cache/")
+          next if f.include? "/.rsync_cache/"
+          if f.end_with? "/project.clj"
             @project_clj_files << f
           end
         end
@@ -162,7 +161,7 @@ class MakeCheckouts < BaseApp
     if res.size == 1
       File.dirname(res.first)
     else
-      puts "No local project found for: #{dep_name}"
+      puts "  No local project found for: #{dep_name}"
       nil
     end
   end
@@ -180,12 +179,12 @@ class MakeCheckouts < BaseApp
     deps.keys.each do |dep_name|
       src_file = find_checkout dep_name
       unless src_file
-        puts "No source directory found for #{dep_name}"
+        puts "  No source directory found for #{dep_name}"
         next
       end
       dest_file = "./checkouts/#{File.basename(src_file)}"
       next if File.exist? dest_file
-      puts "Linking #{dep_name} :: #{src_file} => #{dest_file}"
+      puts "  Linking #{dep_name} :: #{src_file} => #{dest_file}"
       FileUtils.ln_s src_file, dest_file
     end
   end
