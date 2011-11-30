@@ -167,13 +167,14 @@ class MakeCheckouts < BaseApp
   end
 
   def run
+    unless File.exist? 'project.clj'
+      raise "Error: no project.clj file found."
+    end
+
     unless File.exist? 'checkouts'
       FileUtils.mkdir 'checkouts'
     end
 
-    unless File.exist? 'project.clj'
-      raise "Error: no project.clj file found."
-    end
 
     deps = get_deps_from_project_clj
     deps.keys.each do |dep_name|

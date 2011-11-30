@@ -6,7 +6,11 @@ if screen -ls | grep -q "$NAME"; then
   screen -x "$NAME"
 else
   if [ -n "$PROJ" ]; then
-    cd $HOME/projects/$PROJ
+    if [ -d $PROJ ]; then
+      cd $PROJ
+    else
+      cd $HOME/projects/$PROJ
+    fi
   fi
   screen -S "$NAME"
 fi
