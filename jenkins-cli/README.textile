@@ -26,7 +26,7 @@ You must create the file @~/.jenkins-cli.yml@ with the following:
 <pre>
 jenkins:
   base_url: http://url-to-your-jenkins-instance/
-<pre>
+</pre>
 
 If you are running your Jenkins behind basic http authentication, you can specify the username and password with:
 
@@ -36,7 +36,7 @@ jenkins:
   htauth:
     user: the-username
     pass: the-password
-<pre>
+</pre>
 
 h1. Usage
 
@@ -68,7 +68,7 @@ Show the last part of the output of the project.  To follow the output until com
 
 <pre>
 user@host ~$ jenkins tail -f [project-name]
-<pre>
+</pre>
 
 h3. show
 
