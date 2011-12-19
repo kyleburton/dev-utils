@@ -109,9 +109,11 @@ class Jenkins
     resp = raw_get "/job/#{project}/"
     doc = Hpricot(resp.body)
     (doc/"table#buildHistory"/"tr.build-row").each do |row|
+      #require 'ruby-debug'; debugger; 1;
+      next if (row/"img").first.nil?
       status = (row/"img").first[:tooltip]
+      next if status.nil?
       link = (row/"a.tip").first
-      next if link.nil?
       status = status.split(/\s+/).first
       build_id = link[:href].scan(/\/(\d+)\/$/).first
       proj_info[:builds] << {:number => build_id, :status => status}
