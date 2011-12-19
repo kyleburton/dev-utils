@@ -10,6 +10,8 @@ class DevUtilsHelper
        :binaries => %w[make-checkouts]},
       {:name => 'named-screen',
        :binaries => %w[named-screen]},
+      {:name => 'jenkins-cli',
+       :binaries => %w[jenkins]},
     ]
   end
 
