@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 set -u
-set -x
+# set -x
 
 trap "stty sane" INT TERM EXIT
 
