@@ -12,6 +12,8 @@ class DevUtilsHelper
        :binaries => %w[named-screen]},
       {:name => 'jenkins-cli',
        :binaries => %w[jenkins]},
+      {:name => 'swank-cli',
+       :binaries => %w[swank-cli swank-cli.rb]},
     ]
   end
 
