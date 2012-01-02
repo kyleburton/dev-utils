@@ -21,11 +21,10 @@ class SwankCli < BaseApp
     send_command %q|(swank:connection-info)|
     send_command %q|(swank:create-repl nil)|
     # $stdin.fcntl(Fcntl::F_SETFL,Fcntl::O_NONBLOCK)
-    await_output
+    await_output true
   end
 
   def command_line_arguments
-    printf "here \r\n"
     super.concat [
       ['i','init=s',"Initialize the connetion with code from the given file."],
       ['e','eval=s',"Eval a string and exit"],
@@ -101,12 +100,12 @@ class SwankCli < BaseApp
     end
   end
 
-  def await_output
+  def await_output only_if_verbose=false
     await_output = true
     while await_output
       sleep 0.5
       output = read_any
-      print "#{output}\r\n"
+      only_if_verbose or print "#{output}\r\n"
       await_output = !output.nil?
     end
   end
