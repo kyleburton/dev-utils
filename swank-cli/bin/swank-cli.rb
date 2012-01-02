@@ -21,7 +21,7 @@ class SwankCli < BaseApp
     send_command %q|(swank:connection-info)|
     send_command %q|(swank:create-repl nil)|
     # $stdin.fcntl(Fcntl::F_SETFL,Fcntl::O_NONBLOCK)
-    await_output true
+    await_output !@verbose
   end
 
   def command_line_arguments
@@ -105,7 +105,10 @@ class SwankCli < BaseApp
     while await_output
       sleep 0.5
       output = read_any
-      only_if_verbose or print "#{output}\r\n"
+      if !output.nil? && (!only_if_verbose || !output.include?("(:indentation-update"))
+        print "#{output}\r\n"
+      end
+      #only_if_verbose or print "#{output}\r\n"
       await_output = !output.nil?
     end
   end
