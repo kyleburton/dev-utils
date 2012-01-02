@@ -16,7 +16,7 @@ class SwankCli < BaseApp
     @host = self.host || "localhost"
     @port = (self.port||"4005").to_i
     @cmd_counter = 1
-    print "connecting to #{@host}:#{@port}\r\n"
+    @verbose && print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
     send_command %q|(swank:connection-info)|
     send_command %q|(swank:create-repl nil)|
