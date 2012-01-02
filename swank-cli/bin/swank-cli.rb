@@ -7,13 +7,16 @@ class SwankCli < BaseApp
 
   def initialize
     super
+  end
+
+  def after_init
     host, port = ARGV
-    @debug = false
     @repl = true
     @rest_line = ''
     @host = host
     @port = port.to_i
     @cmd_counter = 1
+    print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
     send_command %q|(swank:connection-info)|
     sleep 0.5
@@ -22,6 +25,14 @@ class SwankCli < BaseApp
     sleep 0.5
     read_any_and_puts
     # $stdin.fcntl(Fcntl::F_SETFL,Fcntl::O_NONBLOCK)
+  end
+
+  def command_line_arguments
+    printf "here \r\n"
+    super.concat [
+      ['i','init=s',"Initialize the connetion with code from the given file."],
+      ['f','file=s',"Run code in the given file."]
+    ]
   end
 
   def cmd_count
@@ -33,7 +44,7 @@ class SwankCli < BaseApp
   def send_command s, ns="user"
     cmd = sprintf %Q|(:emacs-rex %s "%s" t #{cmd_count})|, s, ns
     str = sprintf "%06x%s", cmd.size, cmd
-    @debug and print "Send: #{str}\r\n"
+    @verbose and print "Send: #{str}\r\n"
     @s.write str
   end
 
@@ -53,6 +64,8 @@ class SwankCli < BaseApp
   def escape_sexp s
     s.gsub! /\\/, "\\\\"
     s.gsub! /"/, "\\\""
+    s.gsub! /\r/, "\\r"
+    s.gsub! /\n/, "\\n"
     s
   end
 
@@ -77,14 +90,36 @@ class SwankCli < BaseApp
 
   def handle_command cmd
     cmd = cmd[1..-1]
-    if cmd == "quit"
+    if !cmd.empty? && "quit".start_with?(cmd)
       @repl = false
+    elsif cmd == ""
+      printf "Commands: \r\n"
+      printf "  ?quit\r\n"
+      printf "\r\n"
     else
       printf "Unrecognized command : #{cmd}\r\n"
     end
   end
 
   def run
+    after_init
+    if self.init
+      eval_string File.read(self.init)
+    end
+
+    if self.file
+      s = File.read(self.file)
+      eval_string s
+      await_input = true
+      while await_input
+        sleep 0.5
+        output = read_any
+        print "#{output}\r\n"
+        await_input = !output.nil?
+      end
+      return
+    end
+
     while @repl
       read_any_and_puts
       #cmd = $stdin.readline
@@ -92,6 +127,7 @@ class SwankCli < BaseApp
       cmd.chomp!
       if cmd.start_with? "?"
         handle_command cmd
+        next
       end
       if cmd.empty?
         read_any_and_puts
