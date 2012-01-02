@@ -11,11 +11,10 @@ class SwankCli < BaseApp
   end
 
   def after_init
-    host, port = ARGV
     @repl = true
     @rest_line = ''
-    @host = host
-    @port = port.to_i
+    @host = self.host || "localhost"
+    @port = (self.port||"4005").to_i
     @cmd_counter = 1
     print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
@@ -30,6 +29,8 @@ class SwankCli < BaseApp
     super.concat [
       ['i','init=s',"Initialize the connetion with code from the given file."],
       ['e','eval=s',"Eval a string and exit"],
+      ['h','host=s',"Connect to host (default: localhost)"],
+      ['p','port=s',"Connect to port (default: 4005)"],
       ['f','file=s',"Run code in the given file."]
     ]
   end
@@ -126,6 +127,15 @@ class SwankCli < BaseApp
     if self.file
       fname = Pathname.new(self.file).realpath
       eval_string %Q|(load-file "#{fname}")|
+      await_output
+      return
+    end
+
+    if !ARGV.empty?
+      ARGV.each do |s|
+        s = s + ""
+        eval_string s
+      end
       await_output
       return
     end
