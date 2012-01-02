@@ -19,9 +19,10 @@ class SwankCli < BaseApp
     @verbose and print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
     send_command %q|(swank:connection-info)|
+    await_output !@verbose, "(:indentation-updat", 0.001
     send_command %q|(swank:create-repl nil)|
-    # $stdin.fcntl(Fcntl::F_SETFL,Fcntl::O_NONBLOCK)
-    await_output !@verbose
+    await_output !@verbose, ":style :spawn :lisp-implementation", 0.001
+    await_output !@verbose, %q|(:return (:ok ("user" "user"))|, 0.001
   end
 
   def command_line_arguments
@@ -100,16 +101,23 @@ class SwankCli < BaseApp
     end
   end
 
-  def await_output only_if_verbose=false
-    await_output = true
-    while await_output
-      sleep 0.5
+  def await_output only_if_verbose=false, look_for=nil, sleep_time=0.1
+    keep_looping = true
+    while keep_looping
+      #sleep sleep_time unless sleep_time.nil?
+      sleep sleep_time
       output = read_any
+      if !look_for.nil? && !output.nil? && output.include?(look_for)
+        #puts "found expected output: '#{look_for}' '#{output}'"
+        @rest_line = ''
+        # return output
+        return true
+      end
       if !output.nil? && (!only_if_verbose || !output.include?("(:indentation-update"))
         print "#{output}\r\n"
       end
       #only_if_verbose or print "#{output}\r\n"
-      await_output = !output.nil?
+      keep_looping = !output.nil? || !look_for.nil?
     end
   end
 
