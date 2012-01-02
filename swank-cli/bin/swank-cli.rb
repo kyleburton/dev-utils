@@ -2,6 +2,7 @@ require 'rubygems'
 require 'socket'
 require 'fcntl'
 require 'base_app'
+require 'pathname'
 
 class SwankCli < BaseApp
 
@@ -19,18 +20,16 @@ class SwankCli < BaseApp
     print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
     send_command %q|(swank:connection-info)|
-    sleep 0.5
-    read_any_and_puts
     send_command %q|(swank:create-repl nil)|
-    sleep 0.5
-    read_any_and_puts
     # $stdin.fcntl(Fcntl::F_SETFL,Fcntl::O_NONBLOCK)
+    await_output
   end
 
   def command_line_arguments
     printf "here \r\n"
     super.concat [
       ['i','init=s',"Initialize the connetion with code from the given file."],
+      ['e','eval=s',"Eval a string and exit"],
       ['f','file=s',"Run code in the given file."]
     ]
   end
@@ -101,22 +100,33 @@ class SwankCli < BaseApp
     end
   end
 
+  def await_output
+    await_output = true
+    while await_output
+      sleep 0.5
+      output = read_any
+      print "#{output}\r\n"
+      await_output = !output.nil?
+    end
+  end
+
   def run
     after_init
     if self.init
       eval_string File.read(self.init)
+      await_output
+    end
+
+    if self.eval
+      eval_string self.eval
+      await_output
+      return
     end
 
     if self.file
-      s = File.read(self.file)
-      eval_string s
-      await_input = true
-      while await_input
-        sleep 0.5
-        output = read_any
-        print "#{output}\r\n"
-        await_input = !output.nil?
-      end
+      fname = Pathname.new(self.file).realpath
+      eval_string %Q|(load-file "#{fname}")|
+      await_output
       return
     end
 
