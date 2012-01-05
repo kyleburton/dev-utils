@@ -139,6 +139,7 @@ class MakeCheckouts < BaseApp
       @checkouts_search_paths.each do |path|
         Find.find(path) do |f|
           next if f.include? "/.rsync_cache/"
+          next if f.include? "/checkouts/"
           if f.end_with? "/project.clj"
             @project_clj_files << f
           end
