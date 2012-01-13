@@ -5,6 +5,7 @@ require 'base_app'
 require 'pathname'
 
 class SwankCli < BaseApp
+  attr_accessor :port, :host
 
   def initialize
     super
@@ -19,10 +20,10 @@ class SwankCli < BaseApp
     @verbose and print "connecting to #{@host}:#{@port}\r\n"
     @s = TCPSocket.new @host, @port
     send_command %q|(swank:connection-info)|
-    await_output !@verbose, "(:indentation-updat", 0.001
+    await_output !@verbose, "(:indentation-updat", 0.1
     send_command %q|(swank:create-repl nil)|
-    await_output !@verbose, ":style :spawn :lisp-implementation", 0.001
-    await_output !@verbose, %q|(:return (:ok ("user" "user"))|, 0.001
+    #await_output !@verbose, ":style :spawn :lisp-implementation", 0.1
+    await_output !@verbose, %q|(:return (:ok ("user" "user"))|, 0.1
   end
 
   def command_line_arguments
@@ -107,6 +108,7 @@ class SwankCli < BaseApp
       #sleep sleep_time unless sleep_time.nil?
       sleep sleep_time
       output = read_any
+      puts output if @verbose
       if !look_for.nil? && !output.nil? && output.include?(look_for)
         #puts "found expected output: '#{look_for}' '#{output}'"
         @rest_line = ''
