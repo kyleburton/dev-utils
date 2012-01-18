@@ -3,6 +3,7 @@ require 'rubygems'
 require 'hpricot'
 require 'mechanize'
 require 'yaml'
+require 'colorize'
 
 class Jenkins
   attr_accessor :config
@@ -50,6 +51,24 @@ class Jenkins
     super
   end
 
+  def detailed_projects_list
+    if @detailed_projects_list.nil?
+      @detailed_projects_list = []
+      resp = raw_get "/"
+      doc = Hpricot(resp.body)
+      (doc/"table#projectstatus"/"tr")[1..-1].each do |row|
+        rdoc = Hpricot(row.to_s)
+        job_names = (rdoc/"a[@href^='job']")
+        next if job_names.empty?
+        job_name = job_names.first.to_s.scan(/job\/([^\/]+)\//).first.first
+        status = (rdoc/"img").first.to_s.scan(/tooltip=\"([^"]+)\"/).first.first
+        job_info = {:name => job_name, :status => status }
+        @detailed_projects_list << job_info
+      end
+    end
+    @detailed_projects_list
+  end
+
   def projects_list
     if @projects_list.nil?
       @projects_list = []
@@ -66,14 +85,17 @@ class Jenkins
   end
 
   def cmd_ls
-    projects_list.each do |proj|
-      puts proj
+    detailed_projects_list.each do |pinfo|
+      status = pinfo[:status]
+      succeeded = status == "Success"
+      status =  succeeded ? status.green : status.red
+      output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
+      puts "#{pinfo[:name]}\t#{status}\t#{output_cmd}"
     end
   end
 
   def assert_project! project
     unless projects_list.member? project
-      #require 'ruby-debug'; debugger; 1;
       puts "Error: project does not exist #{project.inspect}.  Try one of: #{@projects_list.join(" ")}"
       exit 1
     end
@@ -109,7 +131,6 @@ class Jenkins
     resp = raw_get "/job/#{project}/"
     doc = Hpricot(resp.body)
     (doc/"table#buildHistory"/"tr.build-row").each do |row|
-      #require 'ruby-debug'; debugger; 1;
       next if (row/"img").first.nil?
       status = (row/"img").first[:tooltip]
       next if status.nil?
