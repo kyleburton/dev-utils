@@ -88,7 +88,13 @@ class Jenkins
     detailed_projects_list.each do |pinfo|
       status = pinfo[:status]
       succeeded = status == "Success"
-      status =  succeeded ? status.green : status.red
+      if status == "Success"
+        status = status.green
+      elsif status == "In progress"
+        status = status.blue
+      else
+        status = status.red
+      end
       output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
       puts "#{pinfo[:name]}\t#{status}\t#{output_cmd}"
     end
