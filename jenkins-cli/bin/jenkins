@@ -51,6 +51,34 @@ class Jenkins
     super
   end
 
+  def last_successful_build_info row
+    info = {}
+    last_success_info = (row/"td").search("a[@href$='lastSuccessfulBuild/']").first
+    if last_success_info.nil?
+      return info
+    else
+      last_success_info = last_success_info.parent
+      info[:time] = last_success_info.get_attribute('data')
+      info[:ago]  = last_success_info.inner_html.split(/\s{2,}/)[1]
+      info[:build] = last_success_info.search("a").first.inner_html
+      return info
+    end
+  end
+  
+  def last_failed_build_info row
+    info = {}
+    last_failed_info = (row/"td").search("a[@href$='lastFailedBuild/']").first
+    if last_failed_info.nil?
+      return info
+    else
+      last_failed_info = last_failed_info.parent
+      info[:time] = last_failed_info.get_attribute('data')
+      info[:ago]  = last_failed_info.inner_html.split(/\s{2,}/)[1]
+      info[:build] = last_failed_info.search("a").first.inner_html
+      return info
+    end
+  end
+
   def detailed_projects_list
     if @detailed_projects_list.nil?
       @detailed_projects_list = []
@@ -62,7 +90,11 @@ class Jenkins
         next if job_names.empty?
         job_name = job_names.first.to_s.scan(/job\/([^\/]+)\//).first.first
         status = (rdoc/"img").first.to_s.scan(/tooltip=\"([^"]+)\"/).first.first
-        job_info = {:name => job_name, :status => status }
+        job_info = {:name => job_name, 
+                    :status => status, 
+                    :last_success => last_successful_build_info(rdoc),
+                    :last_failure => last_failed_build_info(rdoc)
+                    }
         @detailed_projects_list << job_info
       end
     end
@@ -97,6 +129,35 @@ class Jenkins
       end
       output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
       puts "#{pinfo[:name]}\t#{status}\t#{output_cmd}"
+    end
+  end
+  
+  def cmd_la
+    detailed_projects_list.each do |pinfo|
+      status = pinfo[:status]
+      succeeded = status == "Success"
+      if status == "Success"
+        status = status.green
+      elsif status == "In progress"
+        status = status.blue
+      else
+        status = status.red
+      end
+
+      if pinfo[:last_success].empty?
+        last_build_success = "  Last Success: N/A".yellow
+      else
+        last_build_success = "  Last Success: #{pinfo[:last_success][:ago]} ago, build #{pinfo[:last_success][:build]}".yellow
+      end
+
+      if pinfo[:last_failure].empty?
+        last_build_failure = "  Last Failure: N/A".yellow
+      else
+        last_build_failure = "  Last Failure: #{pinfo[:last_failure][:ago]} ago, build #{pinfo[:last_failure][:build]}".yellow
+      end
+      
+      output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
+      puts "#{pinfo[:name]}\t#{status}\n#{last_build_success}\n#{last_build_failure}"
     end
   end
 
