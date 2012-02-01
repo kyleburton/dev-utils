@@ -14,6 +14,8 @@ class DevUtilsHelper
        :binaries => %w[jenkins]},
       {:name => 'swank-cli',
        :binaries => %w[swank-cli swank-cli.rb]},
+      {:name => 'cards',
+       :binaries => %w[card]},
     ]
   end
 
