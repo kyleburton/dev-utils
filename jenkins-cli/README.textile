@@ -1,0 +1,89 @@
+h1. Jenkins Command Line Helper
+
+h1. Why?
+
+The other tools that we saw for doing this
+
+* used java and were too slow in startup, we wanted/needed a fast to run command line tool we could use to automate tasks
+* didn't support viewing the output of a previous build
+* didn't support following the output of a running build
+* we used basic auth in front of our jenkins instance and weren't sure if the other tools supported it
+
+Of course, at this time, this tool doesn't do a lot of what those others do. YMMV.
+
+h1. Installation
+
+Copy or symlink into a directory on your $PATH.  You can install to $HOME/bin by running:
+
+<pre>
+user@host ~$ rake install
+</pre>
+
+h2. Configuration
+
+You must create the file @~/.jenkins-cli.yml@ with the following:
+
+<pre>
+jenkins:
+  base_url: http://url-to-your-jenkins-instance/
+</pre>
+
+If you are running your Jenkins behind basic http authentication, you can specify the username and password with:
+
+<pre>
+jenkins:
+  base_url: http://url-to-your-jenkins-instance/
+  htauth:
+    user: the-username
+    pass: the-password
+</pre>
+
+h1. Usage
+
+<pre>
+user@host ~$ jenkins
+You must supply a command: one of: build, output, ls, tail, show
+user@host ~$
+</pre>
+
+h3. ls
+
+Lists the configured projects in your Jenkins instance.
+
+h2. build [project-name]
+
+Trigger a build.  To trigger a build and watch (tail) the output:
+
+<pre>
+user@host ~$ jenkins build -w [project-name]
+</pre>
+
+h3. output [project-name]
+
+Display the raw output from the latest build of the project.
+
+h3. tail [project-name]
+
+Show the last part of the output of the project.  To follow the output until completed, use @-f@:
+
+<pre>
+user@host ~$ jenkins tail -f [project-name]
+</pre>
+
+h3. show
+
+Show build information.
+
+h1. authors
+
+Joshua Crean <joshua.crean@gmail.com>
+Kyle Burton <kyle.burton@gmail.com>
+
+h1. License
+ *   The use and distribution terms for this software are covered by the
+ *   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+ *   which can be found in the file epl-v10.html at the root of this distribution.
+ *   By using this software in any fashion, you are agreeing to be bound by
+ *       the terms of this license.
+ *   You must not remove this notice, or any other, from this software.
+

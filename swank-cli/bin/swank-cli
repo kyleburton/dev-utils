@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+set -u
+# set -x
+
+trap "stty sane" INT TERM EXIT
+
+stty raw
+ruby $(dirname $0)/swank-cli.rb "$@"

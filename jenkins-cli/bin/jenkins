@@ -1,0 +1,267 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'hpricot'
+require 'mechanize'
+require 'yaml'
+require 'colorize'
+
+class Jenkins
+  attr_accessor :config
+
+  def self.symbolize_keys m
+    n = {}
+    m.each do |k,v|
+      n[k.to_sym] = v.class == Hash ? Jenkins.symbolize_keys(v) : v
+    end
+    n
+  end
+
+  def initialize
+    @config ||= {}
+    config_file = "#{ENV['HOME']}/.jenkins-cli.yml"
+    if File.exist? config_file
+      @config = @config.merge Jenkins.symbolize_keys(YAML.load_file(config_file))[:jenkins]
+      #puts "config: #{@config.inspect}"
+    end
+    @ua = Mechanize.new
+    if @config[:htauth]
+      @ua.auth(@config[:htauth][:user],@config[:htauth][:pass])
+    end
+    super
+  end
+
+  def make_url url
+    "#{@config[:base_url]}#{url}"
+  end
+
+  def raw_get url, query_params = {}
+    @ua.get make_url(url), query_params
+  end
+
+  def raw_post url, data, headers={}
+    headers = {"Content-Type"=>"application/x-www-form-urlencoded; charset=UTF-8"}.merge(headers)
+    url = make_url(url)
+    #puts "posting to: #{url}"
+    #puts "   headers: #{headers.inspect}"
+    @ua.post(url, data, headers)
+  end
+
+  def command_line_arguments
+    # super << []
+    super
+  end
+
+  def last_successful_build_info row
+    info = {}
+    last_success_info = (row/"td").search("a[@href$='lastSuccessfulBuild/']").first
+    if last_success_info.nil?
+      return info
+    else
+      last_success_info = last_success_info.parent
+      info[:time] = last_success_info.get_attribute('data')
+      info[:ago]  = last_success_info.inner_html.split(/\s{2,}/)[1]
+      info[:build] = last_success_info.search("a").first.inner_html
+      return info
+    end
+  end
+  
+  def last_failed_build_info row
+    info = {}
+    last_failed_info = (row/"td").search("a[@href$='lastFailedBuild/']").first
+    if last_failed_info.nil?
+      return info
+    else
+      last_failed_info = last_failed_info.parent
+      info[:time] = last_failed_info.get_attribute('data')
+      info[:ago]  = last_failed_info.inner_html.split(/\s{2,}/)[1]
+      info[:build] = last_failed_info.search("a").first.inner_html
+      return info
+    end
+  end
+
+  def detailed_projects_list
+    if @detailed_projects_list.nil?
+      @detailed_projects_list = []
+      resp = raw_get "/"
+      doc = Hpricot(resp.body)
+      (doc/"table#projectstatus"/"tr")[1..-1].each do |row|
+        rdoc = Hpricot(row.to_s)
+        job_names = (rdoc/"a[@href^='job']")
+        next if job_names.empty?
+        job_name = job_names.first.to_s.scan(/job\/([^\/]+)\//).first.first
+        status = (rdoc/"img").first.to_s.scan(/tooltip=\"([^"]+)\"/).first.first
+        job_info = {:name => job_name, 
+                    :status => status, 
+                    :last_success => last_successful_build_info(rdoc),
+                    :last_failure => last_failed_build_info(rdoc)
+                    }
+        @detailed_projects_list << job_info
+      end
+    end
+    @detailed_projects_list
+  end
+
+  def projects_list
+    if @projects_list.nil?
+      @projects_list = []
+      resp = raw_get "/"
+      doc = Hpricot(resp.body)
+      (doc/"table#projectstatus"/"a[@href^='job']").each do |link|
+        job_name = link[:href].scan(/job\/([^\/]+)\//).first.first
+        @projects_list << job_name
+      end
+      @projects_list = @projects_list.uniq.sort
+    end
+
+    @projects_list
+  end
+
+  def cmd_ls
+    detailed_projects_list.each do |pinfo|
+      status = pinfo[:status]
+      succeeded = status == "Success"
+      if status == "Success"
+        status = status.green
+      elsif status == "In progress"
+        status = status.blue
+      else
+        status = status.red
+      end
+      output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
+      puts "#{pinfo[:name]}\t#{status}\t#{output_cmd}"
+    end
+  end
+  
+  def cmd_la
+    detailed_projects_list.each do |pinfo|
+      status = pinfo[:status]
+      succeeded = status == "Success"
+      if status == "Success"
+        status = status.green
+      elsif status == "In progress"
+        status = status.blue
+      else
+        status = status.red
+      end
+
+      if pinfo[:last_success].empty?
+        last_build_success = "  Last Success: N/A".yellow
+      else
+        last_build_success = "  Last Success: #{pinfo[:last_success][:ago]} ago, build #{pinfo[:last_success][:build]}".yellow
+      end
+
+      if pinfo[:last_failure].empty?
+        last_build_failure = "  Last Failure: N/A".yellow
+      else
+        last_build_failure = "  Last Failure: #{pinfo[:last_failure][:ago]} ago, build #{pinfo[:last_failure][:build]}".yellow
+      end
+      
+      output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
+      puts "#{pinfo[:name]}\t#{status}\n#{last_build_success}\n#{last_build_failure}"
+    end
+  end
+
+  def assert_project! project
+    unless projects_list.member? project
+      puts "Error: project does not exist #{project.inspect}.  Try one of: #{@projects_list.join(" ")}"
+      exit 1
+    end
+    true
+  end
+
+  def cmd_build *args
+    watch, project = *args
+    if watch == '-w' # watch
+      watch, project = true, project
+    else
+      watch, project = false, watch
+    end
+    assert_project! project
+    last_id = latest_build_id project
+    puts "triggering: #{project}"
+    resp = raw_get "/job/#{project}/build?delay=0sec"
+    if watch
+      # wait for the next job to start
+      puts "Waiting for new build to start, last was: #{last_id}"
+      while last_id == get_project_info(project)[:builds].first[:number]
+        print '.'
+        sleep 0.5
+        $stdout.flush
+      end
+      cmd_tail "-f", project
+    end
+  end
+
+  def get_project_info project
+    assert_project! project
+    proj_info = {:name => project, :builds => []}
+    resp = raw_get "/job/#{project}/"
+    doc = Hpricot(resp.body)
+    (doc/"table#buildHistory"/"tr.build-row").each do |row|
+      next if (row/"img").first.nil?
+      status = (row/"img").first[:tooltip]
+      next if status.nil?
+      link = (row/"a.tip").first
+      status = status.split(/\s+/).first
+      build_id = link[:href].scan(/\/(\d+)\/$/).first
+      proj_info[:builds] << {:number => build_id, :status => status}
+    end
+    proj_info
+  end
+
+  def cmd_show project
+    get_project_info(project)[:builds].each do |build|
+      puts "#{build[:number]} #{build[:status]}"
+    end
+  end
+
+  def latest_build_id project
+    get_project_info(project)[:builds].first[:number]
+  end
+
+  # cat output of a job
+  def cmd_output project, build=latest_build_id(project)
+    puts "get me #{project}/#{build}"
+    resp = raw_get "/job/#{project}/#{build}/consoleText"
+    puts resp.body
+  end
+
+
+  def cmd_tail *args
+    follow, project = *args
+    if follow == "-f"
+      follow, project = true, project
+    else
+      follow, project = false, follow
+    end
+
+    build = latest_build_id(project)
+    last = ""
+    start = 0
+    while true
+      resp = raw_post "/job/#{project}/#{build}/logText/progressiveHtml", {:start => start}
+      start = resp.header["x-text-size"]
+      #$stderr.puts "new start=#{start}"
+      last = resp.body
+      print last
+      break unless follow
+      break unless resp.header["x-more-data"] == "true"
+    end
+  end
+
+  def run
+    if ARGV.empty?
+      available = self.methods.map {|m| m.to_s}.select {|m| m.start_with? "cmd_"}.map {|m| m.sub(/cmd_/,'') }
+      puts "You must supply a command: one of: #{available.join ", "}"
+      exit 1
+    end
+    cmd = ("cmd_" + ARGV.shift).to_sym
+    unless self.respond_to? cmd
+      raise "Error: command not recognized: #{cmd}"
+    end
+
+    self.send cmd, *ARGV
+  end
+end
+
+Jenkins.new.run

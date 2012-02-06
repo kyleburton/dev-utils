@@ -1,0 +1,12 @@
+require 'rubygems'
+require 'fileutils'
+require 'pathname'
+
+desc "Install into $HOME/bin/"
+task :install do
+  dest = "#{ENV['HOME']}/bin/jenkins"
+  src = File.join(File.dirname(Pathname.new(__FILE__).realpath),"bin/jenkins")
+  unless File.exist? dest
+    FileUtils.ln_s src,dest
+  end
+end

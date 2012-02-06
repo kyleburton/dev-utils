@@ -8,6 +8,14 @@ class DevUtilsHelper
     @utilities = [
       {:name => 'make-checkouts',
        :binaries => %w[make-checkouts]},
+      {:name => 'named-screen',
+       :binaries => %w[named-screen]},
+      {:name => 'jenkins-cli',
+       :binaries => %w[jenkins]},
+      {:name => 'swank-cli',
+       :binaries => %w[swank-cli swank-cli.rb]},
+      {:name => 'cards',
+       :binaries => %w[card]},
     ]
   end
 

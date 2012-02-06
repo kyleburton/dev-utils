@@ -1,0 +1,248 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'base_app'
+require 'tempfile'
+require 'json'
+require 'fileutils'
+#require 'uuid'
+require 'time'
+require 'yaml'
+
+# configuration:
+# $HOME/.cards.js => defaults / globals
+# $PROJ/.cards.js => project settings
+
+class Cards < BaseApp
+  def editor
+    ENV['EDITOR'] || 'vim'
+  end
+
+  def symbolize_keys m
+    m.inject({}) do |m2,pair|
+      k,v = *pair
+      if v.class == Hash
+        v = symbolize_keys v
+      end
+      m2[k.to_sym] = v
+      m2
+    end
+  end
+
+  def find_proj_root
+    if Dir.pwd == "/"
+      raise "Error: could not find current project root! (looking for .git directory)"
+    end
+    unless File.exist? "./.git"
+      Dir.chdir ".." do |p|
+        return find_proj_root
+      end
+    end
+    return Dir.pwd
+  end
+
+  def in_proj_root
+    Dir.chdir(find_proj_root) do |p|
+      yield p
+    end
+  end
+
+  def in_db_dir
+    in_proj_root do |p|
+      Dir.chdir(".card.db") do |p2|
+        yield p2
+      end
+    end
+  end
+
+  def in_active_project
+    in_db_dir do |p|
+      Dir.chdir("projects/#{@active_project[:name]}") do |p2|
+        yield p2
+      end
+    end
+  end
+
+  def card_fpath f
+    "#{find_proj_root}/.card.db/#{f}"
+  end
+
+  def ensure_dir dir
+    unless File.exist? dir
+      puts "C: creating #{dir}"
+      FileUtils.mkdir_p dir
+    end
+  end
+
+  def ensure_project_dir
+    in_proj_root do |p|
+      ensure_dir ".card.db/projects/default"
+      %w[incomplete current complete].each do |dir|
+        ensure_dir ".card.db/projects/default/#{dir}"
+      end
+    end
+  end
+
+  def current_git_sha
+    in_proj_root do
+      @curr_git_sha ||= `git rev-parse HEAD`.chomp!
+    end
+  end
+
+  def new_task_id
+    "#{Time.now.strftime("%Y%m%d%H%M%S")}-#{@active_project[:name]}"
+  end
+
+  def with_tmpfile
+    tmpfile = Tempfile.new('card').path
+    yield tmpfile
+    data = nil
+    if File.exist? tmpfile
+      data = File.read tmpfile
+    end
+    data
+  ensure
+    if File.exist? tmpfile
+      File.delete tmpfile
+    end
+  end
+
+  def do_new
+    in_proj_root do |p|
+      data = with_tmpfile do |tmpfile|
+        default = {
+          :task_id          => new_task_id,
+          :project          => @active_project[:name],
+          :requirement_id   => "",
+          :point_estimate   => 1,
+          :name             => "",
+          :created_by       => "",
+          :devs             => ["you","them"],
+          :starting_git_sha => current_git_sha,
+          :title            => "",
+          :details          => "Full\ndetails\nhere.",
+          :created_at       => Time.now.iso8601,
+          :created_at_i     => Time.now.utc.to_i,
+          :started_at       => Time.now.iso8601,
+          :started_at_i     => Time.now.utc.to_i,
+          :completed_at     => Time.now.iso8601,
+          :completed_at_i   => Time.now.utc.to_i,
+        }
+        File.open(tmpfile,'w') do |f|
+          f.write JSON.pretty_generate(default)
+          #f.write default.to_yaml
+        end
+        puts "Open #{editor} #{tmpfile}"
+        system editor, tmpfile
+        #task = YAML.parse File.read(tmpfile)
+      end
+      task = symbolize_keys JSON.parse(data)
+      File.open(task_file(task, :incomplete),"w") do |f|
+        f.write task.to_json
+      end
+    end
+  end
+
+  def load_task_file f
+    symbolize_keys JSON.parse(File.read(f))
+  end
+
+  def do_ls
+    in_active_project do |p|
+      Dir['incomplete/*.json'].each do |f|
+        task_id = File.basename f, '.json'
+        task = load_task_file f
+        puts [ task[:project],task[:task_id],task[:title],task[:requirement_id] ].join("\t")
+      end
+    end
+  end
+
+  def do_edit t
+    if t.nil?
+      raise "you must supply a task to edit/update"
+    end
+    in_active_project do |p|
+      tf = "incomplete/#{t}.json"
+      if File.exist? tf
+        task = load_task_file tf
+        data = with_tmpfile do |tmpfile|
+          File.open(tmpfile,'w') do |f|
+            f.write JSON.pretty_generate(task)
+          end
+          system editor, tmpfile
+        end
+        File.open(tf,'w') do |f|
+          f.write data
+        end
+      end
+    end
+  end
+
+  def do_show t
+    if t.nil?
+      raise "you must supply a task to show"
+    end
+    in_active_project do |p|
+      tf = "incomplete/#{t}.json"
+      if File.exist? tf
+        task = load_task_file tf
+        puts JSON.pretty_generate(task)
+      end
+    end
+  end
+
+  def valid_commands
+    self.methods.select do |m|
+      m.to_s.start_with? "do_"
+    end.map do |m|
+      m.to_s.sub /^do_/, ''
+    end.join(", ")
+  end
+
+  def proj_file
+    "project.json"
+  end
+
+  def task_file t, state=:incomplete
+    "#{active_project_dir}/#{state.to_s}/#{t[:task_id]}.json"
+  end
+
+  def active_project_dir
+    card_fpath "projects/#{@active_project[:name]}"
+  end
+
+  def init_active_project
+    in_db_dir do
+      unless File.exist? proj_file
+        default = {:name => "default"}
+        File.open(proj_file,"w") do |f|
+          f.write default.to_json
+        end
+      end
+      @active_project = symbolize_keys JSON.parse(File.read(proj_file))
+      ensure_dir active_project_dir
+    end
+  end
+
+  def run
+    ensure_project_dir
+    init_active_project
+
+    if ARGV.length < 1
+      puts "valid commands: #{valid_commands}"
+    end
+
+    if ARGV.length > 0
+      cmd = ARGV.first
+      m = "do_#{cmd}".to_sym
+      unless self.respond_to? m
+        puts "#{cmd} is not a valid command: #{valid_commands}"
+      end
+
+      args = ARGV[1..-1]
+      self.send m, *args
+    end
+
+  end
+end
+
+Cards.main
