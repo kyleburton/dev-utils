@@ -1,0 +1,1 @@
+dd if=/dev/urandom bs=1 count=32 | ruby -e 'x=$stdin.read; puts [x[0..16]].pack("u").downcase'
