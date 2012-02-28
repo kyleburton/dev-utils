@@ -2,9 +2,7 @@
 NAME="$1"
 PROJ="$2"
 
-if screen -ls | grep -q "$NAME"; then
-  screen -x "$NAME"
-else
+function rn_create_named_screen() {
   if [ -n "$PROJ" ]; then
     if [ -d $PROJ ]; then
       cd $PROJ
@@ -13,4 +11,14 @@ else
     fi
   fi
   screen -S "$NAME"
+}
+
+if screen -ls | grep -q "$NAME"; then
+  if screen -x "$NAME"; then
+    exit $?
+  else
+    rn_create_named_screen
+  fi
+else
+  rn_create_named_screen
 fi
