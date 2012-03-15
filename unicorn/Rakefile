@@ -1,0 +1,19 @@
+require 'rubygems'
+require 'erb'
+
+def render name
+    bklass = Class.new do
+      attr_accessor :config
+    end
+    b = bklass.new
+    b.config = {
+      :name => name
+    }
+    tmpl = File.read('unicorn.init.erb')
+    res = ERB.new(tmpl).result(b.instance_eval { binding })
+end
+
+task :render, :name do |t,args|
+  name = args[:name] or raise "Error: you must supply an application name."
+  puts render(name)
+end
