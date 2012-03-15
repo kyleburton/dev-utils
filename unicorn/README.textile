@@ -22,7 +22,7 @@ Rendering requires you to set up a binding that has access to the configuration:
     end
     b = bklass.new
     b.config = {
-      :name = "your-app-name", # determines install path: /var/www/your-app-name
+      :name => "your-app-name" # determines install path: /var/www/your-app-name
     }
     tmpl = File.read('unicorn.init.erb')
     ERB.new(tmpl).result(b.instance_eval { binding })

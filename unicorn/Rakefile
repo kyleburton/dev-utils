@@ -17,3 +17,11 @@ task :render, :name do |t,args|
   name = args[:name] or raise "Error: you must supply an application name."
   puts render(name)
 end
+
+task :install, :name do |t,args|
+  name = args[:name] or raise "Error: you must supply an application name."
+  File.open("/etc/init.d/unicorn.#{name}","w") do |f|
+    f.write render(name)
+  end
+end
+
