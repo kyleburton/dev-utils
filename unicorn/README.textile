@@ -6,6 +6,8 @@ h2. Features
 
 Unicorn supports doing a live upgrade of your application.  Combined with a deployment tool like Capistrano, this allows you to have a zero downtime deployment on a given server (given your code supports the upgrade that is - Unicorn will update to your new app code, but can't help you if your app is broken).
 
+This unicorn init script includes a safe upgrade feature that walks thorugh the documented set of signals, waiting for Unicorn to perform the various steps of the upgrade process.  Steps have been taken to ensure that the script will pick up where it left off if it is interrupted part of the way through the upgrade.
+
 The init script is written as an ERB template that we typically install via Chef.  The secitons to customize should be easy to identify. 
 
 h2. Usage
