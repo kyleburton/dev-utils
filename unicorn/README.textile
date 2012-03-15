@@ -1,0 +1,28 @@
+h1. Unicorn Init Script
+
+This is the init script we use for controlling our Unicorn based Rails apps.
+
+h2. Features
+
+Unicorn supports doing a live upgrade of your application.  Combined with a deployment tool like Capistrano, this allows you to have a zero downtime deployment on a given server (given your code supports the upgrade that is - Unicorn will update to your new app code, but can't help you if your app is broken).
+
+The init script is written as an ERB template that we typically install via Chef.  The secitons to customize should be easy to identify. 
+
+h2. Usage
+
+The only configuration parameter the template currently uses is @:name@, which should match your Rails applicaiton name (the directory name of the rails app).
+
+Rendering requires you to set up a binding that has access to the configuration:
+
+<pre class="code">
+    bklass = Class.new do
+      attr_accessor :config
+    end
+    b = bklass.new
+    b.config = {
+      :name = "your-app-name", # determines install path: /var/www/your-app-name
+    }
+    tmpl = File.read('unicorn.init.erb')
+    ERB.new(tmpl).result(b.instance_eval { binding })
+</pre>
+
