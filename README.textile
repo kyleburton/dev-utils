@@ -1,8 +1,28 @@
 h1. Development (Unix Shell) Utilities
 
+h2. jenkins-cli
+
+Command line interface for inspecting and controlling your "Jenkins CI":http://jenkins-ci.org/ server.  Allows you to list your configured builds, see the output of a build and trigger a build.
+
 h2. make-checkouts
 
 Leiningen helper to create a checkouts directory based on the dependencies in your @project.clj@ file.  It will search in your $HOME/projects folder for the project sources and create the appropriate symlinks.
+
+h2. swank-cli
+
+Command line interface for "SLIME's":http://common-lisp.net/project/slime/ "Swank":https://github.com/jochu/swank-clojure server.  The utility allows you to evaluate lisp code from the command line, making it easy to write shell scripts that interact with your JVM Based clojure applications (in the case of Swank-Clojure).
+
+h2. randpass
+
+Random password generator.  Uses data directly from @/dev/urandom@ to generate difficult to guess (unfortunately they are also difficult to remember) passwords.
+
+h2. named-screen
+
+"GNU Screen":http://www.gnu.org/software/screen/ helper for working with named screens.  It will creat a screen session with the given name if one does not already exist, or re-connect to the named session if it does.
+
+h2. unicorn
+
+Sample Init script for the "Unicorn":http://unicorn.bogomips.org/ web server.  This script implements the "Upgrade":http://unicorn.bogomips.org/SIGNALS.html process for zero downtime deployments (no connections will be lost while your Rails application upgrades).
 
 h1. Authors
 
