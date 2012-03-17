@@ -1,0 +1,126 @@
+#!/bin/bash
+ACTION="$1"
+set -u
+set -e
+
+APP_ROOT=/var/www/<%= @config[:name] %>/current
+PID=$APP_ROOT/tmp/pids/unicorn.pid
+ENV=production
+CMD="/var/lib/gems/1.8/bin/unicorn_rails -D -E $ENV -c $APP_ROOT/config/unicorn.rb"
+
+old_pid="$PID.oldbin"
+
+cd $APP_ROOT || exit 1
+
+sig () {
+        test -s "$PID" && kill -$1 `cat $PID`
+}
+
+oldsig () {
+        test -s $old_pid && kill -$1 `cat $old_pid`
+}
+
+function unicorn_pid () {
+  cat $APP_ROOT/tmp/pids/unicorn.pid
+}
+
+function oldpid () {
+  if [ -e $APP_ROOT/tmp/pids/unicorn.pid.oldbin ]; then
+    cat $APP_ROOT/tmp/pids/unicorn.pid.oldbin
+  else
+    cat $APP_ROOT/tmp/pids/unicorn.pid
+  fi
+}
+
+function unicorn_has_workers () {
+  PID=$1
+  ps uwwwwf --ppid $PID  | grep -q 'unicorn_rails worker'
+}
+
+function unicorn_is_old () {
+  PID=$1
+  unicorn_psgrep $PID | grep -q '(old)'
+}
+
+function unicorn_psgrep () {
+  PID=$1
+  ps uwww $PID 2>&1 | tail -n +2
+}
+
+function unicorn_upgrade () {
+  OLDPID=$(oldpid)
+  echo "OLDPID: $OLDPID"
+  unicorn_psgrep $OLDPID
+  
+  if ! unicorn_is_old $OLDPID; then
+    # USR2
+    kill -USR2 $OLDPID
+    # wait for the old master to change it's name
+    while ! unicorn_is_old $OLDPID; do
+      echo "Waiting for old master: $OLDPID"
+      unicorn_psgrep $OLDPID
+      sleep 1
+    done
+  fi
+  
+  echo "OLD Master: $OLDPID"
+  unicorn_psgrep $OLDPID
+  
+  # wait for the new workers
+  while ! unicorn_has_workers $(unicorn_pid); do
+    echo "Waiting for new workers: $(unicorn_pid)"
+    sleep 1
+  done
+  
+  echo "New Master has workers: $(unicorn_pid)"
+  unicorn_psgrep $(unicorn_pid)
+  
+  # WINCH to OLD master
+  if unicorn_has_workers $OLDPID; then
+    kill -WINCH $OLDPID
+  fi
+  
+  # wait for old workers
+  #   when the old worker's child processes have 0 'worker's in them we can move on
+  while unicorn_has_workers $OLDPID; do
+    echo "Waiting for old workers: $OLDPID"
+    sleep 1
+  done
+  
+  # QUIT to OLD master
+  echo "LOGANS RUN SUCKER!"
+  kill -QUIT $OLDPID
+
+}
+
+case "$ACTION" in
+start)
+        sig 0 && echo >&2 "Already running" && exit 0
+        $CMD
+        ;;
+stop)
+        sig QUIT && exit 0
+        echo >&2 "Not running"
+        ;;
+force-stop)
+        sig TERM && exit 0
+        echo >&2 "Not running"
+        ;;
+restart|reload)
+        sig HUP && echo reloaded OK && exit 0
+        echo >&2 "Couldn't reload, starting '$CMD' instead"
+        $CMD
+        ;;
+upgrade)
+        unicorn_upgrade
+        ;;
+rotate)
+        sig USR1 && echo rotated logs OK && exit 0
+        echo >&2 "Couldn't rotate logs, starting '$CMD' instead"
+        $CMD
+        ;;
+*)
+        echo >&2 "Usage: $0 <start|stop|restart|upgrade|rotate|force-stop>"
+        exit 1
+        ;;
+esac
