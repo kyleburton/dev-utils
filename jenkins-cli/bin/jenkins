@@ -27,7 +27,7 @@ class Jenkins
     end
     @ua = Mechanize.new
     if @config[:htauth]
-      @ua.auth(@config[:htauth][:user],@config[:htauth][:pass])
+      @ua.add_auth(@config[:base_url],@config[:htauth][:user],@config[:htauth][:pass])
     end
     super
   end
