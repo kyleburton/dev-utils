@@ -13,6 +13,12 @@ function rn_create_named_screen() {
   screen -S "$NAME"
 }
 
+if [ -z "$NAME" ]; then
+  echo "$(basename $0) screen-name [starting-directory]"
+  screen -ls
+  exit 1
+fi
+
 if screen -ls | grep -q "$NAME"; then
   if screen -x "$NAME"; then
     exit $?

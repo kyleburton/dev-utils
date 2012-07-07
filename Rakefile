@@ -16,6 +16,8 @@ class DevUtilsHelper
        :binaries => %w[swank-cli swank-cli.rb]},
       {:name => 'cards',
        :binaries => %w[card]},
+      {:name => 'randpass',
+       :binaries => %w[randpass]},
     ]
   end
 

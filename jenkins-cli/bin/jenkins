@@ -22,10 +22,12 @@ class Jenkins
     if File.exist? config_file
       @config = @config.merge Jenkins.symbolize_keys(YAML.load_file(config_file))[:jenkins]
       #puts "config: #{@config.inspect}"
+    else
+      puts "WARNING: no config file: #{config_file}"
     end
     @ua = Mechanize.new
     if @config[:htauth]
-      @ua.auth(@config[:htauth][:user],@config[:htauth][:pass])
+      @ua.add_auth(@config[:base_url],@config[:htauth][:user],@config[:htauth][:pass])
     end
     super
   end
