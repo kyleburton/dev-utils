@@ -24,6 +24,8 @@ class SexpParser
     string = string.gsub("[", " ( ")
     string = string.gsub(")", " ) ")
     string = string.gsub("]", " ) ")
+    string = string.gsub("{", " ( ")
+    string = string.gsub("}", " ) ")
     token_array = string.split(" ")
     return token_array
   end
