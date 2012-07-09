@@ -2,6 +2,8 @@
   (:require
    [aws.route53 :as route53]
    [aws.elb     :as elb]
+   [aws.cf      :as cf]
+   [aws.ec2     :as ec2]
    [clojure.pprint :as pp])
   (:use
    [clojure.string :only [join]]
@@ -63,22 +65,54 @@
         instance-id (get-in request [:route-params :instance])]
     (elb/register-instance elb-name instance-id)))
 
+(defn elb-remove-instance-and-wait [request]
+  (let [elb-name    (get-in request [:route-params :name])
+        instance-id (get-in request [:route-params :instance])]
+    (elb/deregister-instance elb-name instance-id)
+    (elb/await-instance-removal elb-name instance-id)))
+
+(defn elb-add-instance-and-wait [request]
+  (let [elb-name    (get-in request [:route-params :name])
+        instance-id (get-in request [:route-params :instance])]
+    (elb/register-instance elb-name instance-id)
+    (elb/await-instance-addition elb-name instance-id)))
+
 (defn elb-instance-health [request]
   (let [elb-name    (get-in request [:route-params :name])]
     (doseq [instance-info (elb/instance-health elb-name)]
       (println (join "\t" (map instance-info [:instanceId :state]))))))
 
+(defn cf-list-stacks [request]
+  (doseq [stack (cf/stacks)]
+    (println (join "\t" (map stack [:stackName :stackId])))))
+
+(defn cf-list-stack-instances [request]
+  (let [stack-name (get-in request [:route-params :name])]
+    (doseq [instance (cf/instances stack-name)]
+      (println (join "\t" (map instance [:physicalResourceId :logicalResourceId :resourceStatus]))))))
+
+(defn ec2-instance-info [request]
+  (let [instance-id (get-in request [:route-params :name])
+        info        (ec2/instance-info instance-id)]
+    (pp/pprint info)))
+
 (def routing-table
-     [
-      {:pattern ["route53" "ls"]        :handler route53-ls}
-      {:pattern ["route53" "ls" :name]  :handler route53-ls-zone}
-      {:pattern ["elb" "ls"]            :handler elb-ls}
-      {:pattern ["elb" "ls" :name]      :handler elb-ls-elb}
+     [{:pattern ["route53" "ls"]                 :handler route53-ls}
+      {:pattern ["route53" "ls" :name]           :handler route53-ls-zone}
+      {:pattern ["elb" "ls"]                     :handler elb-ls}
+      {:pattern ["elb" "ls" :name]               :handler elb-ls-elb}
       {:pattern ["elb" :name "remove" :instance] :handler elb-remove-instance}
       {:pattern ["elb" :name "add"    :instance] :handler elb-add-instance}
-      {:pattern ["elb" :name "health"] :handler elb-instance-health}
-      ])
+      ;;{:pattern ["elb" :name "remove-and-wait" :instance] :handler elb-remove-instance-and-wait}
+      ;;{:pattern ["elb" :name "add-and-wait"    :instance] :handler elb-add-instance-and-wait}
+      {:pattern ["elb" :name "health"]           :handler elb-instance-health}
+      {:pattern ["cf" "ls"]                      :handler cf-list-stacks}
+      {:pattern ["cf" :name "instances"]         :handler cf-list-stack-instances}
+      {:pattern ["ec2" "ls" :name]               :handler ec2-instance-info}])
 
+(defn show-routes []
+  (doseq [route routing-table]
+    (println (join " " (cons "aws" (:pattern route))))))
 
 (defn find-matching-route [args]
   (loop [[route & routes] routing-table]
@@ -93,35 +127,11 @@
   (let [matching-route (find-matching-route args)]
     (cond
       matching-route
-      (do
-        (println (format "match: %s" matching-route))
-        ((:handler matching-route) matching-route))
+      ((:handler matching-route) matching-route)
       :no-matching-route
-      (println (format "no matching command for: %s" args)))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      (do
+        (println (format "no matching command for: %s" args))
+        (show-routes)))))
 
 
 

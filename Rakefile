@@ -18,6 +18,8 @@ class DevUtilsHelper
        :binaries => %w[card]},
       {:name => 'randpass',
        :binaries => %w[randpass]},
+      {:name => 'aws',
+       :binaries => %w[aws]},
     ]
   end
 

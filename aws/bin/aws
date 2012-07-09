@@ -1,14 +1,30 @@
+#!/usr/bin/env bash
 #set -exu
-PROJ_HOME=$(dirname $0)/..
+resolve_symlink () {
+  F="$1"
+  while [ -h "$F" ]; do
+    F=$(readlink $F)
+  done
+  echo "$F"
+}
+
+make_lein_classpath () {
+  pushd $PROJ_HOME
+  lein classpath > $CPFILE
+  popd
+}
+
+PROJ_HOME="$(dirname $(resolve_symlink ${BASH_SOURCE[0]}))"
 
 CPFILE=$PROJ_HOME/.lein-classpath
 
 if [ ! -e $CPFILE ]; then
-  lein classpath > $CPFILE
+  make_lein_classpath
 fi
 
 if [ $PROJ_HOME/project.clj -nt $CPFILE ]; then
-  lein classpath > $CPFILE
+  make_lein_classpath
 fi
 
+#java -client -cp $PROJ_HOME/src:$(cat $CPFILE) clojure.main -m aws.core "$@"
 java -cp $PROJ_HOME/src:$(cat $CPFILE) clojure.main -m aws.core "$@"

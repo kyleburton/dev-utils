@@ -7,4 +7,5 @@
 /checkouts
 /.lein-deps-sum
 .lein-classpath
+bin/.lein-classpath
 *~

@@ -58,3 +58,13 @@
       (DescribeInstanceHealthRequest.
        (:loadBalancerName (load-balancer-for-resource-name elb-dns-name))))))))
 
+
+(defn await-instance-removal [elb-name instance-id]
+  (loop [health (instance-health elb-name)]
+    (let [])
+    ))
+
+(defn await-instance-addition [elb-name instance-id]
+  (loop [health (instance-health elb-name)]
+    (let [])
+    ))
