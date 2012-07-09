@@ -1,0 +1,14 @@
+#set -exu
+PROJ_HOME=$(dirname $0)/..
+
+CPFILE=$PROJ_HOME/.lein-classpath
+
+if [ ! -e $CPFILE ]; then
+  lein classpath > $CPFILE
+fi
+
+if [ $PROJ_HOME/project.clj -nt $CPFILE ]; then
+  lein classpath > $CPFILE
+fi
+
+java -cp $PROJ_HOME/src:$(cat $CPFILE) clojure.main -m aws.core "$@"

@@ -1,0 +1,5 @@
+h1. aws command line tool
+
+Uses the "AWS Java SDK":http://aws.amazon.com/sdkforjava/
+
+h1. License
