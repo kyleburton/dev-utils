@@ -18,13 +18,23 @@
 (def-simple-cached load-balancers []
   (vec (.getLoadBalancerDescriptions (.describeLoadBalancers elb-client))))
 
+;; (first (filter #(= "boom-prod-RelayEla-MICNJ7UKID0H" (:loadBalancerName %1)) (map bean (load-balancers))))
+;;(map bean (load-balancers))
+
+(defn load-balancer-for-dns-name [resource-name]
+  (let [elb-info      (first (:resourceRecords (first (route53/records-for-resource resource-name))))
+        elb-dns-name  (if elb-info (.getValue elb-info))]
+    (if elb-info
+      (first
+       (filter
+        (fn [elb]
+          (= elb-dns-name (:DNSName elb)))
+        (map bean (load-balancers)))))))
+
 (defn load-balancer-for-resource-name [resource-name]
-  (let [elb-dns-name  (.getValue (first (:resourceRecords (first (route53/records-for-resource resource-name)))))]
-    (first
-     (filter
-      (fn [elb]
-        (= elb-dns-name (:DNSName elb)))
-      (map bean (load-balancers))))))
+  (or
+   (first (filter #(= resource-name (:loadBalancerName %1)) (map bean (load-balancers))))
+   (load-balancer-for-dns-name resource-name)))
 
 (defn deregister-instance [elb-dns-name instance-id]
   (let [elb-info (load-balancer-for-resource-name elb-dns-name)]
@@ -68,3 +78,13 @@
   (loop [health (instance-health elb-name)]
     (let [])
     ))
+
+
+
+
+
+
+
+
+
+
