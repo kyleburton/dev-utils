@@ -71,17 +71,6 @@
           (recur routes)
           match-info)))))
 
-(comment
-
-  (find-matching-route ["route53" "ls" "ec2.relayzone.com"])
-
-)
-
-
-
-
-;; (find-matching-route ["route53" "ls"])
-
 (defn -main [& args]
   (let [matching-route (find-matching-route args)]
     (cond

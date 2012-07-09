@@ -42,11 +42,4 @@
             (= (str resource-name ".") (:name %1)))
           (all-resource-records)))
 
-(comment
-
-  (records-for-resource "boom-prod.ec2.relayzone.com")
-
-
- )
-
 
