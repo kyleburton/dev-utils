@@ -93,8 +93,11 @@
 
 (defn ec2-instance-info [request]
   (let [instance-id (get-in request [:route-params :name])
-        info        (ec2/instance-info instance-id)]
-    (pp/pprint info)))
+        info        (ec2/instance-info instance-id)
+        attrs       (vec (map info [:instanceId :publicDnsName :publicIpAddress :privateIpAddress]))
+        tags        (map bean (:tags info))
+        attrs       (conj attrs (join "," (map #(format "%s=%s" (:key %1) (:value %1)) tags)))]
+    (println (join "\t" attrs))))
 
 (def routing-table
      [{:pattern ["route53" "ls"]                 :handler route53-ls}

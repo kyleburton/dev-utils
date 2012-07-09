@@ -9,3 +9,4 @@
 .lein-classpath
 bin/.lein-classpath
 *~
+screenlog.?

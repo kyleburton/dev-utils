@@ -13,20 +13,20 @@
 (def ec2-client (AmazonEC2Client. aws-credentials))
 
 (def-simple-cached instance-info [instance-id]
-  (mapcat
-   #(vec (map bean (:instances (bean %1))))
-       (.getReservations
-        (.describeInstances
-         ec2-client
-         (doto
-             (DescribeInstancesRequest.)
-           (.setInstanceIds
-            [instance-id]))))))
+  (first
+   (mapcat
+    #(vec (map bean (:instances (bean %1))))
+    (.getReservations
+     (.describeInstances
+      ec2-client
+      (doto
+          (DescribeInstancesRequest.)
+        (.setInstanceIds
+         [instance-id])))))))
 
 (comment
 
   (instance-info "i-33b2524b")
-
 
 
   )
