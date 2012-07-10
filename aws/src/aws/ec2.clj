@@ -6,13 +6,12 @@
     DescribeInstancesRequest])
   (:use
    aws.aws
-   [clj-etl-utils.cache-utils :only [def-simple-cached]]
+   [aws.util                 :only [def-disk-cache]]
    [clj-etl-utils.lang-utils :only [raise]]))
-
 
 (def ec2-client (AmazonEC2Client. aws-credentials))
 
-(def-simple-cached instance-info [instance-id]
+(def-disk-cache instance-info [instance-id]
   (first
    (mapcat
     #(vec (map bean (:instances (bean %1))))

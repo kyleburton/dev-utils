@@ -4,7 +4,7 @@
    [com.amazonaws.services.cloudformation.model ListStackResourcesRequest])
   (:use
    aws.aws
-   [clj-etl-utils.cache-utils :only [def-simple-cached]]
+   [aws.util :only [def-disk-cache]]
    [clj-etl-utils.lang-utils :only [raise]]))
 
 
@@ -12,7 +12,7 @@
 (def cf-client
      (AmazonCloudFormationClient. aws-credentials))
 
-(def-simple-cached stacks []
+(def-disk-cache stacks []
   (vec (map bean (.getStacks (.describeStacks cf-client)))))
 
 (defn stack-info [stack-name]
@@ -22,7 +22,7 @@
         res (or res (first (filter #(= stack-name (:stackId %1)) (stacks))))]
     res))
 
-(def-simple-cached resources [stack-name]
+(def-disk-cache resources [stack-name]
   (let [stack-info (stack-info stack-name)]
     (vec
      (map bean

@@ -6,8 +6,7 @@
    [aws.ec2     :as ec2]
    [clojure.pprint :as pp])
   (:use
-   [clojure.string :only [join]]
-   [clj-etl-utils.cache-utils :only [def-simple-cached]])
+   [clojure.string :only [join]])
   (:gen-class))
 
 
@@ -17,7 +16,7 @@
     (doseq [zone-rec zone-records]
       (let [resource-name (.replaceAll (:name zone-rec) "\\.$" "")]
         (doseq [resource (:resourceRecords zone-rec)]
-          (println (format "%s\t%s" resource-name (.getValue resource))))))))
+          (println (format "%s\t%s" resource-name (:value resource))))))))
 
 (defn route53-ls [request]
   (doseq [zone (route53/hosted-zones)]
@@ -48,8 +47,7 @@
 
 (defn elb-ls [request]
   (doseq [elb (elb/load-balancers)]
-    (let [elb (bean elb)]
-      (println (join "\t" (map elb [:loadBalancerName :DNSName]))))))
+    (println (join "\t" (map elb [:loadBalancerName :DNSName])))))
 
 (defn elb-ls-elb [request]
   (let [elb-info (elb/load-balancer-for-resource-name (get-in request [:route-params :name]))]
@@ -106,8 +104,8 @@
       {:pattern ["elb" "ls" :name]               :handler elb-ls-elb}
       {:pattern ["elb" :name "remove" :instance] :handler elb-remove-instance}
       {:pattern ["elb" :name "add"    :instance] :handler elb-add-instance}
-      ;;{:pattern ["elb" :name "remove-and-wait" :instance] :handler elb-remove-instance-and-wait}
-      ;;{:pattern ["elb" :name "add-and-wait"    :instance] :handler elb-add-instance-and-wait}
+      {:pattern ["elb" :name "remove-and-wait" :instance] :handler elb-remove-instance-and-wait}
+      {:pattern ["elb" :name "add-and-wait"    :instance] :handler elb-add-instance-and-wait}
       {:pattern ["elb" :name "health"]           :handler elb-instance-health}
       {:pattern ["cf" "ls"]                      :handler cf-list-stacks}
       {:pattern ["cf" :name "instances"]         :handler cf-list-stack-instances}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#set -exu
+# set -exu
 resolve_symlink () {
   F="$1"
   while [ -h "$F" ]; do
@@ -14,7 +14,7 @@ make_lein_classpath () {
   popd
 }
 
-PROJ_HOME="$(dirname $(resolve_symlink ${BASH_SOURCE[0]}))"
+PROJ_HOME="$(dirname $(resolve_symlink ${BASH_SOURCE[0]}))/.."
 
 CPFILE=$PROJ_HOME/.lein-classpath
 
