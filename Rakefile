@@ -20,6 +20,8 @@ class DevUtilsHelper
        :binaries => %w[randpass]},
       {:name => 'aws',
        :binaries => %w[aws]},
+      {:name => 'remove-from-denyhosts',
+       :binaries => %w[remove-from-denyhosts.sh]},
     ]
   end
 
