@@ -4,14 +4,14 @@
    [aws.elb     :as elb]
    [aws.cf      :as cf]
    [aws.ec2     :as ec2]
-   [clojure.pprint :as pp])
+   [clojure.pprint :as pp]
+   [clojure.data.json :as json])
   (:use
    [clojure.string :only [join]])
   (:gen-class))
 
 
 (defn route53-ls-zone [request]
-  (println (format "route53-ls-zone: request=%s" request))
   (let [zone-records (filter #(= "CNAME" (:type %1)) (route53/zone-records (get-in request [:route-params :name])))]
     (doseq [zone-rec zone-records]
       (let [resource-name (.replaceAll (:name zone-rec) "\\.$" "")]
@@ -80,6 +80,15 @@
     (doseq [instance-info (elb/instance-health elb-name)]
       (println (join "\t" (map instance-info [:instanceId :state]))))))
 
+(defn elb-ls-instances [request]
+  (let [elb-info (elb/load-balancer-for-resource-name (get-in request [:route-params :name]))]
+    (doseq [info (:instances elb-info)]
+      (let [instance-info (ec2/instance-info (:instanceId info))]
+       (println (join "\t"
+                      (concat
+                       (map info [:instanceId])
+                       (map instance-info [:publicDnsName :publicIpAddress :privateIpAddress]))))))))
+
 (defn cf-list-stacks [request]
   (doseq [stack (cf/stacks)]
     (println (join "\t" (map stack [:stackName :stackId])))))
@@ -93,23 +102,24 @@
   (let [instance-id (get-in request [:route-params :name])
         info        (ec2/instance-info instance-id)
         attrs       (vec (map info [:instanceId :publicDnsName :publicIpAddress :privateIpAddress]))
-        tags        (map bean (:tags info))
-        attrs       (conj attrs (join "," (map #(format "%s=%s" (:key %1) (:value %1)) tags)))]
+        tags        (:tags info)
+        attrs       (conj attrs (json/json-str tags))]
     (println (join "\t" attrs))))
 
 (def routing-table
-     [{:pattern ["route53" "ls"]                 :handler route53-ls}
-      {:pattern ["route53" "ls" :name]           :handler route53-ls-zone}
-      {:pattern ["elb" "ls"]                     :handler elb-ls}
-      {:pattern ["elb" "ls" :name]               :handler elb-ls-elb}
-      {:pattern ["elb" :name "remove" :instance] :handler elb-remove-instance}
-      {:pattern ["elb" :name "add"    :instance] :handler elb-add-instance}
+     [{:pattern ["route53" "ls"]                          :handler route53-ls}
+      {:pattern ["route53" "ls" :name]                    :handler route53-ls-zone}
+      {:pattern ["elb" "ls"]                              :handler elb-ls}
+      {:pattern ["elb" "ls" :name]                        :handler elb-ls-elb}
+      {:pattern ["elb" :name "remove" :instance]          :handler elb-remove-instance}
+      {:pattern ["elb" :name "add"    :instance]          :handler elb-add-instance}
       {:pattern ["elb" :name "remove-and-wait" :instance] :handler elb-remove-instance-and-wait}
       {:pattern ["elb" :name "add-and-wait"    :instance] :handler elb-add-instance-and-wait}
-      {:pattern ["elb" :name "health"]           :handler elb-instance-health}
-      {:pattern ["cf" "ls"]                      :handler cf-list-stacks}
-      {:pattern ["cf" :name "instances"]         :handler cf-list-stack-instances}
-      {:pattern ["ec2" "ls" :name]               :handler ec2-instance-info}])
+      {:pattern ["elb" :name "health"]                    :handler elb-instance-health}
+      {:pattern ["elb" :name "instances"]                 :handler elb-ls-instances}
+      {:pattern ["cf" "ls"]                               :handler cf-list-stacks}
+      {:pattern ["cf" :name "instances"]                  :handler cf-list-stack-instances}
+      {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}])
 
 (defn show-routes []
   (doseq [route routing-table]

@@ -7,14 +7,14 @@
   (:use
    aws.aws
    [aws.util                 :only [def-disk-cache]]
-   [clj-etl-utils.lang-utils :only [raise]]))
+   [clj-etl-utils.lang-utils :only [raise rec-bean]]))
 
 (def ec2-client (AmazonEC2Client. aws-credentials))
 
 (def-disk-cache instance-info [instance-id]
   (first
    (mapcat
-    #(vec (map bean (:instances (bean %1))))
+    #(vec (map rec-bean (:instances (bean %1))))
     (.getReservations
      (.describeInstances
       ec2-client
