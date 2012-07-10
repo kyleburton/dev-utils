@@ -26,7 +26,7 @@
 
 (defn load-balancer-for-dns-name [resource-name]
   (let [elb-info      (first (:resourceRecords (first (route53/records-for-resource resource-name))))
-        elb-dns-name  (if elb-info (.getValue elb-info))]
+        elb-dns-name  (if elb-info (:value elb-info))]
     (if elb-info
       (first
        (filter
