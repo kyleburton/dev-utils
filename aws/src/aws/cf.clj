@@ -5,7 +5,7 @@
   (:use
    aws.aws
    [aws.util :only [def-disk-cache]]
-   [clj-etl-utils.lang-utils :only [raise]]))
+   [clj-etl-utils.lang-utils :only [raise rec-bean]]))
 
 
 
@@ -13,7 +13,9 @@
      (AmazonCloudFormationClient. aws-credentials))
 
 (def-disk-cache stacks []
-  (vec (map bean (.getStacks (.describeStacks cf-client)))))
+  (vec (map rec-bean (.getStacks (.describeStacks cf-client)))))
+
+;; (stacks)
 
 (defn stack-info [stack-name]
   ;; find by: stackName, or stackId
