@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+PORT=9222
+URI="http://localhost:${PORT}/"
+
+ANDROID_SDK_HOME=$HOME/android-sdks/platform-tools
+ADB_BIN=$ANDROID_SDK_HOME/adb
+
+if [ ! -d "$ANDROID_SDK_HOME" ]; then
+  echo "Error: you must have the android sdk installed (was not found at $ANDROID_SDK_HOME)"
+  exit -1
+fi
+
+if [ ! -x "$ADB_BIN" ]; then
+  echo "Error: unable to find the adb binary (was not found at $ADB_BIN)"
+  exit -1
+fi
+
+$ADB_BIN forward tcp:$PORT localabstract:chrome_devtools_remote
+
+echo "now open $URI in a browser"
+
+if [ -x $(which gnome-open) ]; then
+  gnome-open $URI
+fi
+
+if [ -x $(which open) ]; then
+  open $URI
+fi

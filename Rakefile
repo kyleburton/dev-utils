@@ -22,6 +22,8 @@ class DevUtilsHelper
        :binaries => %w[aws]},
       {:name => 'remove-from-denyhosts',
        :binaries => %w[remove-from-denyhosts.sh]},
+      {:name => 'android-remote-debugger',
+       :binaries => %w[android-remote-debugger-daemon]},
     ]
   end
 
