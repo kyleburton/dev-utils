@@ -20,6 +20,8 @@ class DevUtilsHelper
        :binaries => %w[randpass]},
       {:name => 'aws',
        :binaries => %w[aws]},
+      {:name => 'aws-elb-mon',
+       :binaries => %w[aws-elb-mon]},
       {:name => 'remove-from-denyhosts',
        :binaries => %w[remove-from-denyhosts.sh]},
       {:name => 'android-remote-debugger',

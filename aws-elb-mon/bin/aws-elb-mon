@@ -1,0 +1,12 @@
+while [ ! -e ".aws.elb.name" ]; do
+  if [ "/" = "$(pwd)" ]; then
+    echo "Error: could not find the root directory for this project (looked for .aws.elb.name)"
+    sleep 3
+    exit -1
+  fi
+  cd ..
+done
+
+AWS_ELB_NAME=$(cat .aws.elb.name)
+echo ssh localhost "DISPLAY=:0.0 gnome-terminal --geometry 80x14+800+0 -e 'watch -d -n 1 aws elb $AWS_ELB_NAME health'"
+
