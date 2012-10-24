@@ -63,7 +63,7 @@ class SwankCli < BaseApp
   end
 
   def escape_sexp s
-    s.gsub! /\\/, "\\\\"
+    #s.gsub! /\\/, "\\\\"
     s.gsub! /"/, "\\\""
     s.gsub! /\r/, "\\r"
     s.gsub! /\n/, "\\n"
