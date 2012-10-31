@@ -1,0 +1,2 @@
+set -eu
+rake install
