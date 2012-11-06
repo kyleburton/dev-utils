@@ -39,6 +39,7 @@ class DevUtilsHelper
       util[:binaries].each do |bin|
         src_file  = File.join($proj_root,util[:name],'bin',bin)
         dest_file = File.join(bin_dir,bin)
+        FileUtils.rm dest_file
         unless File.exist? dest_file
           FileUtils.ln_s src_file, dest_file
         end
