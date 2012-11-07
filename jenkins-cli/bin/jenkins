@@ -179,17 +179,22 @@ class Jenkins
     else
       watch, project = false, watch
     end
+
+    if project.nil? || project.empty?
+      project = load_job_config["name"]
+    end
+
     assert_project! project
     last_id = latest_build_id project
     puts "triggering: #{project}"
     resp = raw_get "/job/#{project}/build?delay=0sec"
 
-    if last_id.nil?
-      $stdout.puts "Sorry, can't automatically watch the initial build, try following it in a second..."
-      return
-    end
-
     if watch
+      if last_id.nil?
+        $stdout.puts "Sorry, can't automatically watch the initial build, try following it in a second..."
+        return
+      end
+
       # wait for the next job to start
       puts "Waiting for new build to start, last was: #{last_id}"
       while last_id == get_project_info(project)[:builds].first[:number]
@@ -247,6 +252,10 @@ class Jenkins
       follow, project = true, project
     else
       follow, project = false, follow
+    end
+
+    if project.nil? || project.empty?
+      project = load_job_config["name"]
     end
 
     build = latest_build_id(project)
