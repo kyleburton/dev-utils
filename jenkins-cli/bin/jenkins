@@ -239,7 +239,12 @@ class Jenkins
   end
 
   # cat output of a job
-  def cmd_output project, build=latest_build_id(project)
+  def cmd_output project=nil, build=nil
+    if project.nil? || project.empty?
+      project = load_job_config["name"]
+    end
+
+    build = latest_build_id(project)
     puts "get me #{project}/#{build}"
     resp = raw_get "/job/#{project}/#{build}/consoleText"
     puts resp.body
