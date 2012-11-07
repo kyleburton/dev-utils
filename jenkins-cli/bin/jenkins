@@ -263,9 +263,30 @@ class Jenkins
     end
   end
 
-  def cmd_new_job config_file
+  def load_job_config config_file=".jenkins-config.json"
+    if !File.exist? config_file
+      File.open(config_file, "w") do |f|
+        f.write <<-END
+{
+  "name":           "#{File.basename(Dir.pwd)}",
+  "builds_to_keep": "2",
+  "git_url":        "#{`grep url .git/config | head -n 1 |cut -f2 -d=`.chomp.strip}",
+  "build_command":  "bash bin/jenkins-build.sh",
+  "email":          "#{@config[:email] || 'build@your-company.com'}"
+}
+        END
+      end
+      $stdout.puts "It looks like there was no #{config_file} here, so I made one for you:"
+      $stdout.puts File.read(config_file)
+      $stdout.puts "Please update it and run this command again."
+      exit 1
+    end
     content = File.read(config_file)
     config  = JSON.parse(content)
+  end
+
+  def cmd_new_job config_file=".jenkins-config.json"
+    config  = load_job_config config_file
 
     create_params = {
       "name"   => config["name"],
@@ -285,8 +306,7 @@ class Jenkins
   end
 
   def cmd_configure_job config_file
-    content = File.read(config_file)
-    config  = JSON.parse(content)
+    config  = load_job_config config_file
 
     params = {
       "json" => {
@@ -368,7 +388,7 @@ class Jenkins
       puts "You must supply a command: one of: #{available.join ", "}"
       exit 1
     end
-    cmd = ("cmd_" + ARGV.shift).to_sym
+    cmd = ("cmd_" + ARGV.shift.to_s.gsub('-','_')).to_sym
     unless self.respond_to? cmd
       raise "Error: command not recognized: #{cmd}"
     end
