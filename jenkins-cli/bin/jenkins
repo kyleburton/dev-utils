@@ -277,6 +277,18 @@ class Jenkins
     end
   end
 
+  def git_url
+    if File.exist? ".git"
+      return `grep url .git/config | head -n 1 |cut -f2 -d=`.chomp.strip
+    end
+
+    if File.exist? "../.git"
+      return `grep url ../.git/config | head -n 1 |cut -f2 -d=`.chomp.strip
+    end
+
+    raise "Sorry, couldn't find a .git directory for the git_url, you'll have to create the config file yourself."
+  end
+
   def load_job_config config_file=".jenkins-config.json"
     if !File.exist? config_file
       File.open(config_file, "w") do |f|
@@ -284,7 +296,7 @@ class Jenkins
 {
   "name":           "#{File.basename(Dir.pwd)}",
   "builds_to_keep": "2",
-  "git_url":        "#{`grep url .git/config | head -n 1 |cut -f2 -d=`.chomp.strip}",
+  "git_url":        "#{git_url}",
   "build_command":  "bash bin/jenkins-build.sh",
   "email":          "#{@config[:email] || 'build@your-company.com'}"
 }
@@ -319,7 +331,7 @@ class Jenkins
     cmd_configure_job config_file
   end
 
-  def cmd_configure_job config_file
+  def cmd_configure_job config_file=".jenkins-config.json"
     config  = load_job_config config_file
 
     params = {
@@ -386,6 +398,7 @@ class Jenkins
         },
         "core:apply" => "true"
       }.to_json,
+      "logrotate" => "on",
       "logrotate_nums" => (config["builds_to_keep"] or "2"),
       "scm"            => "1",
       "_.url"          => config["git_url"],
