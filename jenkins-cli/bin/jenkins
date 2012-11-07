@@ -4,6 +4,7 @@ require 'hpricot'
 require 'mechanize'
 require 'yaml'
 require 'colorize'
+require 'json'
 
 class Jenkins
   attr_accessor :config
@@ -182,6 +183,12 @@ class Jenkins
     last_id = latest_build_id project
     puts "triggering: #{project}"
     resp = raw_get "/job/#{project}/build?delay=0sec"
+
+    if last_id.nil?
+      $stdout.puts "Sorry, can't automatically watch the initial build, try following it in a second..."
+      return
+    end
+
     if watch
       # wait for the next job to start
       puts "Waiting for new build to start, last was: #{last_id}"
@@ -218,7 +225,12 @@ class Jenkins
   end
 
   def latest_build_id project
-    get_project_info(project)[:builds].first[:number]
+    info = get_project_info(project)
+    if info[:builds] && info[:builds].first
+      info[:builds].first[:number]
+    else
+      nil
+    end
   end
 
   # cat output of a job
@@ -249,6 +261,105 @@ class Jenkins
       break unless follow
       break unless resp.header["x-more-data"] == "true"
     end
+  end
+
+  def cmd_new_job config_file
+    content = File.read(config_file)
+    config  = JSON.parse(content)
+
+    create_params = {
+      "name"   => config["name"],
+      "mode"   => "hudson.model.FreeStyleProject",
+      "Submit" => "OK",
+
+      "json" => {
+        "name"   => config["name"],
+        "mode"   => "hudson.model.FreeStyleProject",
+        "from"   => "",
+        "Submit" => "OK"
+      }.to_json
+      }
+
+    raw_post "/view/All/createItem", create_params, 'Content-Type' => 'application/x-www-form-urlencoded'
+    cmd_configure_job config_file
+  end
+
+  def cmd_configure_job config_file
+    content = File.read(config_file)
+    config  = JSON.parse(content)
+
+    params = {
+      "json" => {
+        "name" => config["name"],
+        "description" => config["description"] || "Build: #{config["name"]}",
+        "logrotate" => {
+          "logrotate_days" => "",
+          "logrotate_nums" => (config["builds_to_keep"] or "2"),
+          "logrotate_artifact_days" => "",
+          "logrotate_artifact_nums" => ""
+        },
+        "properties" => {
+          "stapler-class-bag" => "true",
+          "hudson-model-ParametersDefinitionProperty" => {}
+        },
+        "displayNameOrNull" => "",
+        "scm" => {
+          "value" => "1",
+          "userRemoteConfigs" => {
+            "url" =>  config["git_url"],
+            "name" => "",
+            "refspec" => ""
+          },
+          "branches" => {
+            "name" => ""
+          },
+          "includedRegions" => "",
+          "excludedRegions" => "",
+          "excludedUsers" => "",
+          "localBranch" => "",
+          "relativeTargetDir" => "",
+          "reference" => "",
+          "scmName" => "",
+          "gitConfigName" => "",
+          "gitConfigEmail" => "",
+          "pruneBranches" => false,
+          "skipTag" => false,
+          "clean" => false,
+          "remotePoll" => false,
+          "disableSubmodules" => false,
+          "recursiveSubmodules" => false,
+          "authorOrCommitter" => false,
+          "wipeOutWorkspace" => false,
+          "ignoreNotifyCommit" => false,
+          "useShallowClone" => false,
+          "" => ["hudson.plugins.git.util.DefaultBuildChooser", "auto"],
+          "buildChooser" => {
+            "stapler-class" => "hudson.plugins.git.util.DefaultBuildChooser"
+          },
+          "gitTool" => "Default"
+        },
+        "builder" => {
+          "command" => (config["build_command"] or raise("You must supply a build_command")),
+          "stapler-class" => "hudson.tasks.Shell",
+          "kind" => "hudson.tasks.Shell"
+        },
+        "publisher" => {
+          "mailer_recipients" => (config["email"] or raise("You must supply an email for build failures")),
+          "mailer_notifyEveryUnstableBuild" => true,
+          "mailer_sendToIndividuals" => false,
+          "stapler-class" => "hudson.tasks.Mailer",
+          "kind" => "hudson.tasks.Mailer"
+        },
+        "core:apply" => "true"
+      }.to_json,
+      "logrotate_nums" => (config["builds_to_keep"] or "2"),
+      "scm"            => "1",
+      "_.url"          => config["git_url"],
+      "mailer_recipients" => config["email"],
+      "description"       => (config["description"] or "Build: #{config["name"]}")
+    }
+
+    raw_post "/job/#{config["name"]}/configSubmit", params, 'Content-Type' => 'application/x-www-form-urlencoded'
   end
 
   def run
