@@ -334,6 +334,10 @@ class Jenkins
   def cmd_configure_job config_file=".jenkins-config.json"
     config  = load_job_config config_file
 
+    # NB: support:
+    # pseudoUpstreamTrigger:on
+    # upstreamProjects:rn-boomerang
+
     params = {
       "json" => {
         "name" => config["name"],
@@ -357,7 +361,7 @@ class Jenkins
             "refspec" => ""
           },
           "branches" => {
-            "name" => ""
+            "name" => (config["git_branches"] || 'master')
           },
           "includedRegions" => "",
           "excludedRegions" => "",
@@ -384,6 +388,8 @@ class Jenkins
           },
           "gitTool" => "Default"
         },
+        # NB: support pseudoUpstreamTrigger, upstreamProjects
+        # "pseudoUpstreamTrigger": {"upstreamProjects": "rn-boomerang"},
         "builder" => {
           "command" => (config["build_command"] or raise("You must supply a build_command")),
           "stapler-class" => "hudson.tasks.Shell",
@@ -402,6 +408,7 @@ class Jenkins
       "logrotate_nums" => (config["builds_to_keep"] or "2"),
       "scm"            => "1",
       "_.url"          => config["git_url"],
+      "_.name"         => (config["git_branches"] || 'master'),
       "mailer_recipients" => config["email"],
       "description"       => (config["description"] or "Build: #{config["name"]}")
     }
