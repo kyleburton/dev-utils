@@ -334,9 +334,6 @@ class Jenkins
   def cmd_configure_job config_file=".jenkins-config.json"
     config  = load_job_config config_file
 
-    # NB: support:
-    # pseudoUpstreamTrigger:on
-    # upstreamProjects:rn-boomerang
 
     params = {
       "json" => {
@@ -403,7 +400,7 @@ class Jenkins
           "kind" => "hudson.tasks.Mailer"
         },
         "core:apply" => "true"
-      }.to_json,
+      },
       "logrotate" => "on",
       "logrotate_nums" => (config["builds_to_keep"] or "2"),
       "scm"            => "1",
@@ -412,6 +409,16 @@ class Jenkins
       "mailer_recipients" => config["email"],
       "description"       => (config["description"] or "Build: #{config["name"]}")
     }
+
+    if config["build_after"]
+      params["pseudoUpstreamTrigger"]          = "on"
+      params["upstreamProjects"]               = config["build_after"]
+      require 'ruby-debug'; debugger; 1;
+      params["json"]["pseudoUpstreamTrigger"] ||= {}
+      params["json"]["pseudoUpstreamTrigger"]["upstreamProjects"] = config["build_after"]
+    end
+
+    params["json"] = params["json"].to_json
 
     raw_post "/job/#{config["name"]}/configSubmit", params, 'Content-Type' => 'application/x-www-form-urlencoded'
   end
