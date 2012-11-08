@@ -413,7 +413,6 @@ class Jenkins
     if config["build_after"]
       params["pseudoUpstreamTrigger"]          = "on"
       params["upstreamProjects"]               = config["build_after"]
-      require 'ruby-debug'; debugger; 1;
       params["json"]["pseudoUpstreamTrigger"] ||= {}
       params["json"]["pseudoUpstreamTrigger"]["upstreamProjects"] = config["build_after"]
     end
