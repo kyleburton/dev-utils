@@ -22,7 +22,7 @@
 ;;(map bean (load-balancers))
 
 ;; (load-balancer-for-dns-name "boom-prod.ec2.relayzone.com")
-;; (:resourceRecords (first (route53/records-for-resource "boom-prod.ec2.relayzone.com")))41
+;; (:resourceRecords (first (route53/records-for-resource "boom-prod.ec2.relayzone.com")))
 
 (defn load-balancer-for-dns-name [resource-name]
   (let [elb-info      (first (:resourceRecords (first (route53/records-for-resource resource-name))))

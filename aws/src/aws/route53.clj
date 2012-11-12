@@ -31,7 +31,18 @@
 ;; (zone-to-id "ec2.relayzone.com")
 
 (def-disk-cache zone-records [zone-name]
-  (vec (map rec-bean (.getResourceRecordSets (.listResourceRecordSets route53-client (ListResourceRecordSetsRequest. (zone-to-id zone-name)))))))
+  (let [req (.listResourceRecordSets route53-client (ListResourceRecordSetsRequest. (zone-to-id zone-name)))]
+    (loop [acc (vec (map rec-bean (.getResourceRecordSets req)))
+           req req]
+      (if (.isTruncated req)
+        (let [nreq (.listResourceRecordSets route53-client
+                                            (doto
+                                                (ListResourceRecordSetsRequest. (zone-to-id zone-name))
+                                              (.withStartRecordName (.getNextRecordName req))))]
+          (recur
+           (vec (concat acc (vec (map rec-bean (.getResourceRecordSets nreq)))))
+           nreq))
+        acc))))
 
 ;; (zone-records "ec2.relayzone.com")
 
@@ -54,3 +65,4 @@
 
 ;; (records-for-resource "boom-prod-cai.ec2.relayzone.com.")
 ;; (records-for-resource "boom-prod.ec2.relayzone.com.")
+
