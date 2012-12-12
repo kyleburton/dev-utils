@@ -12,7 +12,8 @@
 
 
 (defn route53-ls-zone [request]
-  (let [zone-records (filter #(= "CNAME" (:type %1)) (route53/zone-records (get-in request [:route-params :name])))]
+  (let [zone-records (filter #(or (= "A" (:type %1)) (= "CNAME" (:type %1)))
+                             (route53/zone-records (get-in request [:route-params :name])))]
     (doseq [zone-rec zone-records]
       (let [resource-name (.replaceAll (:name zone-rec) "\\.$" "")]
         (doseq [resource (:resourceRecords zone-rec)]
