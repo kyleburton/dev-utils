@@ -46,6 +46,12 @@ class DevUtilsHelper
           FileUtils.ln_s src_file, dest_file
         end
       end
+      Dir.chdir(util[:name]) do |p|
+        if File.exist? "Gemfile"
+          puts "running bundler for #{util[:name]}..."
+          system "bundle install"
+        end
+      end
     end
   end
 end
