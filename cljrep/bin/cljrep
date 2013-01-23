@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+STDOUT.sync = true
+
+$pwd = Dir.pwd
+
+def find_defn file, lnum, sym
+  lines = File.readlines(file)
+  while !lines[lnum-1].include? "(defn "
+    lnum -= 1
+    if  lnum < 1
+      return nil
+    end
+  end
+
+  if lines[lnum-1] =~ /defn #{sym}\b/
+    return nil
+  end
+
+  lines[lnum-1] =~ /defn (\S+)/
+  return $1
+end
+
+def resolve sym, pfx=""
+  lines = `git grep -n "[/( ]#{sym} " | grep -v 'defn #{sym}'`.split("\n")
+  #puts lines.inspect
+  lines.each do |line|
+    file, line, text = line.split ":", 3
+    defn = find_defn file, line.to_i, sym
+    puts sprintf("%-80s #{pfx}%s", "#{$pwd}/#{file}:#{line}:", defn)
+    #puts "#{pfx}|#{file}:#{line} #{defn}"
+    # recurse on the defn
+    if defn
+      resolve defn, "#{pfx} "
+    end
+  end
+end
+
+resolve ARGV[0]

@@ -10,6 +10,8 @@ class DevUtilsHelper
        :binaries => %w[make-checkouts]},
       {:name => 'named-screen',
        :binaries => %w[named-screen]},
+      {:name => 'cljrep',
+       :binaries => %w[cljrep]},
       {:name => 'jenkins-cli',
        :binaries => %w[jenkins]},
       {:name => 'swank-cli',
