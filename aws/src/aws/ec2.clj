@@ -7,9 +7,13 @@
   (:use
    aws.aws
    [aws.util                 :only [def-disk-cache]]
-   [clj-etl-utils.lang-utils :only [raise rec-bean]]))
+   [clj-etl-utils.lang-utils :only [raise rec-bean aprog1]]))
 
-(def ec2-client (AmazonEC2Client. aws-credentials))
+(def ec2-client
+     (aprog1
+         (AmazonEC2Client. aws-credentials)
+       (when-let [region (System/getenv "REGION")]
+         (.setEndpoint it (get region-map region)))))
 
 (def-disk-cache instance-info [instance-id]
   (first
@@ -23,9 +27,8 @@
         (.setInstanceIds
          [instance-id])))))))
 
-(comment
+(def-disk-cache all-instances []
+  (vec
+   (mapcat
+    #(vec (map rec-bean (.getInstances %1))) (.getReservations (.describeInstances ec2-client)))))
 
-  (instance-info "i-33b2524b")
-
-
-  )

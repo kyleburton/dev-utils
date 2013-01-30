@@ -107,6 +107,27 @@
         attrs       (conj attrs (json/json-str tags))]
     (println (join "\t" attrs))))
 
+
+(defn ec2-ls-instances [request]
+  (println (join "\t"
+                 (.split "id az public-dns public-ip private-dns private-ip state keytags"
+                         "\\s+")))
+  (doseq [instance-info (ec2/all-instances)]
+    (println (join "\t"
+                   [(get instance-info    :instanceId)
+                    (get-in instance-info [:placement :availabilityZone])
+                    (get instance-info    :publicDnsName)
+                    (get instance-info    :publicIpAddress)
+                    (get instance-info    :privateDnsName)
+                    (get instance-info    :privateIpAddress)
+                    (get-in instance-info [:state :name])
+                    (format "{%s}"
+                            (join "; "
+                                  (map #(format "%s=%s"
+                                                (:key %1)
+                                                (:value %1))
+                                       (:tags instance-info))))]))))
+
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
       {:pattern ["route53" "ls" :name]                    :handler route53-ls-zone}
@@ -120,6 +141,7 @@
       {:pattern ["elb" :name "instances"]                 :handler elb-ls-instances}
       {:pattern ["cf" "ls"]                               :handler cf-list-stacks}
       {:pattern ["cf" :name "instances"]                  :handler cf-list-stack-instances}
+      {:pattern ["ec2" "ls"]                              :handler ec2-ls-instances}
       {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}])
 
 (defn show-routes []
