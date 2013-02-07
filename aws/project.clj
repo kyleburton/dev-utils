@@ -5,6 +5,6 @@
   :dependencies [
     [org.clojure/clojure "1.3.0"]
     [org.clojure/tools.cli "0.2.1"]
-    [com.amazonaws/aws-java-sdk "1.3.6"]
+    [com.amazonaws/aws-java-sdk "1.3.26"]
     [org.clojars.kyleburton/clj-etl-utils "1.3.4"]
   ])
