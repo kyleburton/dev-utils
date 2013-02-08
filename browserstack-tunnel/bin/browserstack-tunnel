@@ -24,16 +24,19 @@ if [ ! -e $config_file ]; then
   echo ""
 fi
 
-
-port="${1:-3000}"
-bind_address="${2:-localhost}"
-ssl_flag="${ssl_flag:-0}"
-
 . $config_file
 
+if [ -z "$@" ]; then
+  echo "$(basename $0) local_bind_address,local_port,ssl_flag,..."
+  echo "    eg: $(basename $0) localhost,8000,0"
+  echo "    eg: $(basename $0) localhost,80,0,localhost,443,1,localhost,8000,0,localhost,8080,0"
+  echo ""
+  echo "    $(basename $0) -h    help"
+  exit 1
+fi
 
-echo "Tunneling: $bind_address:$port"
-echo java -jar "$local_jar" "$BROWSERSTACK_PRIVATE_KEY" "$bind_address,$port,$port,$ssl_flag"
-java -jar "$local_jar" "$BROWSERSTACK_PRIVATE_KEY" "$bind_address,$port,$ssl_flag"
+echo "Tunneling... $@"
+echo java -jar "$local_jar" "$BROWSERSTACK_PRIVATE_KEY" "$@"
+java -jar "$local_jar" "$BROWSERSTACK_PRIVATE_KEY" "$@"
 
 
