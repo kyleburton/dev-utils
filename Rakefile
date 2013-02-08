@@ -28,6 +28,8 @@ class DevUtilsHelper
        :binaries => %w[remove-from-denyhosts.sh]},
       {:name => 'android-remote-debugger',
        :binaries => %w[android-remote-debugger-daemon]},
+      {:name => 'browserstack-tunnel',
+       :binaries => %w[browserstack-tunnel]}
     ]
   end
 
