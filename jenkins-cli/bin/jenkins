@@ -173,21 +173,32 @@ class Jenkins
   end
 
   def cmd_build *args
-    watch, project = *args
+    watch, project, build_params = *args
     if watch == '-w' # watch
-      watch, project = true, project
+      watch, project, build_params = true, project, build_params
     else
-      watch, project = false, watch
+      watch, project, build_params = false, watch, build_params
     end
 
     if project.nil? || project.empty?
       project = load_job_config["name"]
     end
 
+    if build_params.nil? || build_params.empty?
+      build_params = load_job_config["build_params"] || nil
+    end
+
     assert_project! project
     last_id = latest_build_id project
     puts "triggering: #{project}"
-    resp = raw_get "/job/#{project}/build?delay=0sec"
+    resp = :api_response
+    if build_params.nil?
+      resp = raw_get "/job/#{project}/build?delay=0sec"
+    else
+      build_params = JSON.parse(build_params)
+      build_params["json"] = {"parameter" => build_params}.to_json
+      resp = raw_post "/job/#{project}/build?delay=0sec", build_params
+    end
 
     if watch
       if last_id.nil?
