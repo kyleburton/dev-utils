@@ -437,6 +437,18 @@ class Jenkins
     if ARGV.empty?
       available = self.methods.map {|m| m.to_s}.select {|m| m.start_with? "cmd_"}.map {|m| m.sub(/cmd_/,'') }
       puts "You must supply a command: one of: #{available.join ", "}"
+      puts %Q||
+      puts %Q|  List Projects:|
+      puts %Q|    jenkins ls|
+      puts %Q||
+      puts %Q|  View Last Build Output:|
+      puts %Q|    jenkins output project-name|
+      puts %Q||
+      puts %Q|  Build a project:|
+      puts %Q|    jenkins build project-name|
+      puts %Q|    jenkins build -w project-name|
+      puts %Q|    jenkins build -w project-name '{"name": "build-param-name", "value": "build-param-name=param-value"}'|
+      puts %Q||
       exit 1
     end
     cmd = ("cmd_" + ARGV.shift.to_s.gsub('-','_')).to_sym
