@@ -447,7 +447,7 @@ class Jenkins
       puts %Q|  Build a project:|
       puts %Q|    jenkins build project-name|
       puts %Q|    jenkins build -w project-name|
-      puts %Q|    jenkins build -w project-name '{"name": "build-param-name", "value": "build-param-name=param-value"}'|
+      puts %Q|    jenkins build -w project-name '{"name": "build-param-name", "value": "param-value"}'|
       puts %Q||
       exit 1
     end
