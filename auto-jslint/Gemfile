@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+gem "jslintrb"
+gem "colorize"
+gem "json"
+gem "base_app"

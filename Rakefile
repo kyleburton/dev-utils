@@ -29,7 +29,9 @@ class DevUtilsHelper
       {:name => 'android-remote-debugger',
        :binaries => %w[android-remote-debugger-daemon]},
       {:name => 'browserstack-tunnel',
-       :binaries => %w[browserstack-tunnel]}
+       :binaries => %w[browserstack-tunnel]},
+      {:name => 'auto-jslint',
+       :binaries => %w[auto-jslint]}
     ]
   end
 

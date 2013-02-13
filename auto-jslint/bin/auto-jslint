@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'base_app'
+
+class AutoJSLint < BaseApp
+  def initialize
+    super
+  end
+
+  def command_line_arguments
+    super.concat([])
+  end
+
+  def find_js_files
+    if ARGV.empty?
+      Dir.glob("**/*.js").concat(Dir.glob("**/*.json"))
+    else
+      ARGV.to_a
+    end
+  end
+
+  def run
+    results = []
+    stats = {:passed => 0, :failed => 0, :total => 0}
+    find_js_files.each do |jsfile|
+      result = `jslintrb #{jsfile} 2>&1`
+      info = {:file => jsfile, :output => result, :result => $?}
+      results << info
+      unless result.empty?
+        puts result
+      end
+      if $? && result.empty?
+        puts "# PASS: #{jsfile}"
+        info[:passed] = true
+        info[:failed] = false
+        stats[:passed] += 1
+      else
+        info[:passed] = false
+        info[:failed] = true
+        puts "# FAIL: #{jsfile}"
+        stats[:failed] += 1
+      end
+      stats[:total] += 1
+    end
+
+    puts "# #{stats[:total]} files checked, #{stats[:passed]} linted, #{stats[:failed]} did not"
+    if stats[:failed] > 0
+      puts "################################################################################"
+      puts "# cut and paste from here"
+      puts "js_lint () {"
+      puts "  if jslintrb \"$1\"; then"
+      puts "    echo \"PASS: $1\""
+      puts "    return 1"
+      puts "  else"
+      puts "    echo \"FAIL: $1\""
+      puts "    return 0"
+      puts "  fi"
+      puts "}"
+      puts ""
+      puts "js_cleanup () {"
+      puts "  watch -e -d -n 2 bash -c \"pwd; if jslintrb $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
+      puts "}"
+      puts ""
+      results.select {|inf| inf[:failed]}.each do |info|
+        puts "js_cleanup #{info[:file]}"
+      end
+      exit 1
+    end
+    exit 0
+  end
+end
+
+AutoJSLint.main
