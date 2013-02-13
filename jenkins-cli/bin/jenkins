@@ -173,12 +173,16 @@ class Jenkins
   end
 
   def cmd_build *args
-    watch, project, build_params = *args
-    if watch == '-w' # watch
-      watch, project, build_params = true, project, build_params
-    else
-      watch, project, build_params = false, watch, project
+    watch = false
+    project = nil
+    build_params = nil
+    if args[0] == 'w'
+      watc = true
+      args.pop
     end
+
+    project = args.pop
+    build_params = args.pop
 
     if project.nil? || project.empty?
       project = load_job_config["name"]
