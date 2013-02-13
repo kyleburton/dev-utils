@@ -177,7 +177,7 @@ class Jenkins
     if watch == '-w' # watch
       watch, project, build_params = true, project, build_params
     else
-      watch, project, build_params = false, watch, build_params
+      watch, project, build_params = false, watch, project
     end
 
     if project.nil? || project.empty?
