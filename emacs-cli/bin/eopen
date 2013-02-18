@@ -1,0 +1,4 @@
+#!/bin/bash
+for f in "$@"; do
+  emacsclient -s .emacs-server/server -e "(find-file \"$f\")"
+done

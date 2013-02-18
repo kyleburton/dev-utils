@@ -1,0 +1,62 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'thor'
+require 'socket'
+require File.join(File.dirname(File.readlink(__FILE__)), '..', '..', 'swank-cli', 'bin', 'swank-cli.rb')
+
+$stdout.sync = true
+
+class AutoSwank < Thor
+  private
+  def get_port pport=4005
+    if File.exist? ".swank.port"
+      return File.readlines(".swank.port").first.to_i
+    end
+    pport
+  end
+
+  def wait_for_swank port
+    max_wait = 120
+    start_time = Time.new.to_i
+    while true
+      begin
+        conn = SwankCli.new
+        conn.after_init
+        conn.close
+        puts "Looks like swank is accepting connections."
+        return true
+      rescue
+        print '.'
+        if (Time.new.to_i - start_time) > max_wait
+          raise "Error: timeout while waiting for swank to start"
+        end
+        sleep 0.2
+      end
+    end
+  end
+
+  public
+
+  desc "swank", "Run lein deps, lein swank"
+  option :port, :type => :numeric, :default => 4005
+  def swank pport=4005
+    port = get_port(pport)
+    system "lein", "deps"
+    # background and wait for swank
+    child_pid = fork
+    if !child_pid
+      wait_for_swank port
+      elisp = %Q|eeval '(progn (setq slime-protocol-version "20100404") (slime-connect "localhost" #{port}))'|
+      puts "Telling emacs to connect: #{elisp}"
+      system elisp
+      exit
+    end
+    puts "child pid is: #{child_pid}"
+    exec "lein swank #{port}"
+    raise "Error starting lein swank!"
+  end
+
+end
+
+AutoSwank.start
+
