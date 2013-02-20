@@ -1,0 +1,23 @@
+h1. Emacs Command Line Utilities
+
+This is a collection of command line utilities for working with a running emacs from the command line.  They allow you to script and automate tasks using emacs from outside of emacs itself.  Many of these things can be done from within emacs itself.
+
+h3. Background
+
+A typical deveopment setup on Linux when I'm developing across multiple software projects is to have a screen session for each project and an emacs open in each screen session.  They are all treated as different environments, and I want each to have its own emacs server separate from the others.  The included elisp code and utilities allow for exactly that.
+
+h1. Configuration
+
+Before using, you must include and execute the elisp code in:
+
+  src/el/local-emacs-server.el
+
+That code sets up a local emacs server, which will store it's server file in ./.emacs-server/server, which is then used by these tools.
+
+h2. eopen file1 ...
+
+From the command line this will execute `find-file` for each of the given command line arguments.
+
+h2. eeval expression
+
+Evaluates the given expression as elisp in your emacs session.

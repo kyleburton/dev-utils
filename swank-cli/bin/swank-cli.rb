@@ -26,6 +26,10 @@ class SwankCli < BaseApp
     await_output !@verbose, %q|(:return (:ok ("user" "user"))|, 0.1
   end
 
+  def close
+    @s.close
+  end
+
   def command_line_arguments
     super.concat [
       ['i','init=s',"Initialize the connetion with code from the given file."],
@@ -170,4 +174,6 @@ class SwankCli < BaseApp
   end
 end
 
-SwankCli.main
+if __FILE__ == $0
+  SwankCli.main
+end

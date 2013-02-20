@@ -1,0 +1,9 @@
+#!/bin/bash
+
+SERVER_FILE=""
+if [ -e .emacs-server/server ]; then
+  SERVER_FILE=".emacs-server/server"
+fi
+
+emacsclient -s $SERVER_FILE -e "$@"
+
