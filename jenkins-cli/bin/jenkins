@@ -173,12 +173,16 @@ class Jenkins
   end
 
   def cmd_build *args
-    watch, project, build_params = *args
-    if watch == '-w' # watch
-      watch, project, build_params = true, project, build_params
-    else
-      watch, project, build_params = false, watch, project
+    watch = false
+    project = nil
+    build_params = nil
+    if args[0] == '-w'
+      watch = true
+      args.shift
     end
+
+    project = args.shift
+    build_params = args.shift
 
     if project.nil? || project.empty?
       project = load_job_config["name"]
@@ -302,6 +306,10 @@ class Jenkins
 
   def load_job_config config_file=".jenkins-config.json"
     if !File.exist? config_file
+      return {}
+    end
+
+    if false && !File.exist?(config_file)
       File.open(config_file, "w") do |f|
         f.write <<-END
 {

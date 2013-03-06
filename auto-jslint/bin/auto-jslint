@@ -8,7 +8,9 @@ class AutoJSLint < BaseApp
   end
 
   def command_line_arguments
-    super.concat([])
+    super.concat([
+                 ['w','watch','Interactively Watch until all js lint errors are fixed.']
+    ])
   end
 
   def find_js_files
@@ -19,13 +21,13 @@ class AutoJSLint < BaseApp
     end
   end
 
-  def run
-    results = []
-    stats = {:passed => 0, :failed => 0, :total => 0}
+  def lint_all_files
+    @results = []
+    @stats = {:passed => 0, :failed => 0, :total => 0}
     find_js_files.each do |jsfile|
       result = `jslintrb #{jsfile} 2>&1`
       info = {:file => jsfile, :output => result, :result => $?}
-      results << info
+      @results << info
       unless result.empty?
         puts result
       end
@@ -33,38 +35,59 @@ class AutoJSLint < BaseApp
         puts "# PASS: #{jsfile}"
         info[:passed] = true
         info[:failed] = false
-        stats[:passed] += 1
+        @stats[:passed] += 1
       else
         info[:passed] = false
         info[:failed] = true
         puts "# FAIL: #{jsfile}"
-        stats[:failed] += 1
+        @stats[:failed] += 1
       end
-      stats[:total] += 1
+      @stats[:total] += 1
     end
+  end
 
-    puts "# #{stats[:total]} files checked, #{stats[:passed]} linted, #{stats[:failed]} did not"
-    if stats[:failed] > 0
-      puts "################################################################################"
-      puts "# cut and paste from here"
-      puts "js_lint () {"
-      puts "  if jslintrb \"$1\"; then"
-      puts "    echo \"PASS: $1\""
-      puts "    return 1"
-      puts "  else"
-      puts "    echo \"FAIL: $1\""
-      puts "    return 0"
-      puts "  fi"
-      puts "}"
-      puts ""
-      puts "js_cleanup () {"
-      puts "  watch -e -d -n 2 bash -c \"pwd; if jslintrb $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
-      puts "}"
-      puts ""
-      results.select {|inf| inf[:failed]}.each do |info|
-        puts "js_cleanup #{info[:file]}"
+  def wait_for_user_to_fix_everything
+    file = Tempfile.new('jslint.fixup')
+    File.open(file, "w") do |f|
+      emit_fixup_script f
+    end
+    system "watch", "-d", "-n2", "bash", file
+    file.unlink
+  end
+
+  def emit_fixup_script ofh=$stdout
+    ofh.puts "################################################################################"
+    ofh.puts "# cut and paste from here"
+    ofh.puts "js_lint () {"
+    ofh.puts "  if jslintrb \"$1\"; then"
+    ofh.puts "    echo \"PASS: $1\""
+    ofh.puts "    return 1"
+    ofh.puts "  else"
+    ofh.puts "    echo \"FAIL: $1\""
+    ofh.puts "    return 0"
+    ofh.puts "  fi"
+    ofh.puts "}"
+    ofh.puts ""
+    ofh.puts "js_cleanup () {"
+    ofh.puts "  watch -e -d -n 2 bash -c \"pwd; if jslintrb $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
+    ofh.puts "}"
+    ofh.puts ""
+    @results.select {|inf| inf[:failed]}.each do |info|
+      ofh.puts "js_cleanup #{info[:file]}"
+    end
+  end
+
+  def run
+    lint_all_files
+
+    puts "# #{@stats[:total]} files checked, #{@stats[:passed]} linted, #{@stats[:failed]} did not"
+    if @stats[:failed] > 0
+      if self.watch
+        wait_for_user_to_fix_everything
+      else
+        emit_fixup_script
+        exit 1
       end
-      exit 1
     end
     exit 0
   end
