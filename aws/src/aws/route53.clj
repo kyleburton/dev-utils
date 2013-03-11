@@ -5,9 +5,26 @@
    [aws.util                 :only [def-disk-cache]])
   (:import
    [com.amazonaws.services.route53 AmazonRoute53Client]
-   [com.amazonaws.services.route53.model GetHostedZoneRequest ListResourceRecordSetsRequest]))
+   [com.amazonaws.services.route53.model GetHostedZoneRequest ListResourceRecordSetsRequest RRType ResourceRecordSet Change ChangeBatch ChangeResourceRecordSetsRequest ChangeAction ResourceRecord]))
 
 (def route53-client (AmazonRoute53Client. aws-credentials))
+
+(comment
+  ;;(ChangeBatch.
+  ;; awsclient/changeResourceRecordSets
+  ;; takes a changeResourceRecordSets
+  ;;     take a ChangeBatch
+  ;;      takes a list of Changes
+  ;;        takes ChangeAction and ResourceRecordSet
+
+  #_(-> route53-client
+        (.changeResourceRecordSets
+         (ChangeResourceRecordSetsRequest. "HOSTED ZONE ID"
+                                           (ChangeBatch. [(Change. ChangeAction/CREATE
+                                                                   (-> (ResourceRecordSet. "subdomain.example.com" RRType/CNAME)
+                                                                       (.withResourceRecords [(ResourceRecord. "example.com")])
+                                                                       (.withTTL 3600)))]))))
+  )
 
 (def-disk-cache hosted-zones []
   (vec (map rec-bean (.getHostedZones (.listHostedZones route53-client)))))
@@ -65,4 +82,5 @@
 
 ;; (records-for-resource "boom-prod-cai.ec2.relayzone.com.")
 ;; (records-for-resource "boom-prod.ec2.relayzone.com.")
+
 
