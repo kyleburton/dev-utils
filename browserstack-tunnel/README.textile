@@ -1,0 +1,16 @@
+h1. BrowserStack Local Development Tunnel Helper
+
+  http://www.browserstack.com/
+
+This utility automates the process of downloading and running BrowserStack's tunnel:
+
+   http://www.browserstack.com/local-testing
+
+h1. Requirements
+
+The following must be installed and on your path: java, curl.
+
+h1. Installation
+
+Add `dev-utils/browserstack-tunnel/bin/` to your `$PATH` or run `rake install` in the project root directory.
+
