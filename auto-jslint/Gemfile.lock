@@ -3,12 +3,7 @@ GEM
   specs:
     base_app (1.0.5)
     colorize (0.5.8)
-    johnson (2.0.0.pre3)
-      stackdeck (~> 0.2)
-    jslintrb (0.7.0)
-      johnson (>= 2.0.0.pre0)
     json (1.7.7)
-    stackdeck (0.2.0)
 
 PLATFORMS
   ruby
@@ -16,5 +11,4 @@ PLATFORMS
 DEPENDENCIES
   base_app
   colorize
-  jslintrb
   json
