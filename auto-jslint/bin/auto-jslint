@@ -31,7 +31,7 @@ class AutoJSLint < BaseApp
       unless result.empty?
         puts result
       end
-      if $? && result.empty?
+      if $? && (result.empty? || result.include?("js is OK."))
         puts "# PASS: #{jsfile}"
         info[:passed] = true
         info[:failed] = false
@@ -39,7 +39,6 @@ class AutoJSLint < BaseApp
       else
         info[:passed] = false
         info[:failed] = true
-        puts "# FAIL: #{jsfile}"
         @stats[:failed] += 1
       end
       @stats[:total] += 1
