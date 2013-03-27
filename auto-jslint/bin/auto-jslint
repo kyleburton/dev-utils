@@ -25,7 +25,7 @@ class AutoJSLint < BaseApp
     @results = []
     @stats = {:passed => 0, :failed => 0, :total => 0}
     find_js_files.each do |jsfile|
-      result = `jslintrb #{jsfile} 2>&1`
+      result = `jslint #{jsfile} 2>&1`
       info = {:file => jsfile, :output => result, :result => $?}
       @results << info
       unless result.empty?
@@ -59,7 +59,7 @@ class AutoJSLint < BaseApp
     ofh.puts "################################################################################"
     ofh.puts "# cut and paste from here"
     ofh.puts "js_lint () {"
-    ofh.puts "  if jslintrb \"$1\"; then"
+    ofh.puts "  if jslint \"$1\"; then"
     ofh.puts "    echo \"PASS: $1\""
     ofh.puts "    return 1"
     ofh.puts "  else"
@@ -69,7 +69,7 @@ class AutoJSLint < BaseApp
     ofh.puts "}"
     ofh.puts ""
     ofh.puts "js_cleanup () {"
-    ofh.puts "  watch -e -d -n 2 bash -c \"pwd; if jslintrb $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
+    ofh.puts "  watch -e -d -n 2 bash -c \"echo vim $1; if jslint $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
     ofh.puts "}"
     ofh.puts ""
     @results.select {|inf| inf[:failed]}.each do |info|
