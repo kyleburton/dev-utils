@@ -69,7 +69,7 @@ class AutoJSLint < BaseApp
     ofh.puts "}"
     ofh.puts ""
     ofh.puts "js_cleanup () {"
-    ofh.puts "  watch -e -d -n 2 bash -c \"echo vim $1; if jslint $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
+    ofh.puts "  echo 'ok' | watch -e -d -n 2 bash -c \"echo vim $1; if jslint $1; then exit 1; else exit 0; fi\" || echo \"CLEAN $1\""
     ofh.puts "}"
     ofh.puts ""
     @results.select {|inf| inf[:failed]}.each do |info|
