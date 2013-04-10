@@ -9,22 +9,57 @@ class AutoJSLint < BaseApp
 
   def command_line_arguments
     super.concat([
-                 ['w','watch','Interactively Watch until all js lint errors are fixed.']
+                 ['w','watch','Interactively Watch until all js lint errors are fixed.'],
+                 ['n','dryrun','Show what it would do, but do not do it.']
     ])
   end
 
-  def find_js_files
-    if ARGV.empty?
+  def glob_for_js_files argv
+    if argv.empty?
       Dir.glob("**/*.js").concat(Dir.glob("**/*.json"))
     else
-      ARGV.to_a
+      argv.to_a
+      dirs = []
+      argv.each do |arg|
+        if File.file?(arg)
+          dirs << arg
+        elsif File.directory?(arg)
+          dirs.concat(Dir.glob("#{arg}/**/*.js")).concat(Dir.glob("#{arg}/**/*.json"))
+          puts arg
+        else
+          puts "#{arg} not a file or directory?"
+        end
+      end
+      dirs
     end
   end
 
-  def lint_all_files
+  def find_js_files argv
+    files = glob_for_js_files argv
+    if File.exist? ".jslint.ignore"
+      file_to_ignore = File.readlines(".jslint.ignore").map do |line|
+        line.chomp!
+        line
+      end
+
+      files = files.select do |f|
+        ignore_this_file = false
+        file_to_ignore.each do |ignore_me|
+          if f.include? ignore_me
+            ignore_this_file = true
+            break
+          end
+        end
+        !ignore_this_file
+      end
+    end
+    files
+  end
+
+  def lint_all_files argv
     @results = []
     @stats = {:passed => 0, :failed => 0, :total => 0}
-    find_js_files.each do |jsfile|
+    find_js_files(argv).each do |jsfile|
       result = `jslint #{jsfile} 2>&1`
       info = {:file => jsfile, :output => result, :result => $?}
       @results << info
@@ -77,7 +112,14 @@ class AutoJSLint < BaseApp
   end
 
   def run
-    lint_all_files
+    if self.dryrun
+      find_js_files(ARGV).each do |jsfile|
+        puts "jslint #{jsfile} 2>&1"
+      end
+      return
+    end
+
+    lint_all_files ARGV
 
     puts "# #{@stats[:total]} files checked, #{@stats[:passed]} linted, #{@stats[:failed]} did not"
     if @stats[:failed] > 0
