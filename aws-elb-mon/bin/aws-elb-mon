@@ -8,5 +8,5 @@ while [ ! -e ".aws.elb.name" ]; do
 done
 
 AWS_ELB_NAME=$(cat .aws.elb.name)
-ssh localhost "DISPLAY=:0.0 gnome-terminal --geometry 80x14+800+0 -e 'watch -d -n 1 aws elb $AWS_ELB_NAME health'"
+ssh localhost "DISPLAY=$DISPLAY gnome-terminal --geometry 80x14+800+0 -e 'watch -d -n 1 aws elb $AWS_ELB_NAME health'"
 
