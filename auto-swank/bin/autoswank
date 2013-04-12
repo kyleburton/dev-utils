@@ -37,6 +37,21 @@ class AutoSwank < Thor
 
   public
 
+  desc "remote", "Ssh to a remote system, with a port forward for the target port"
+  option :host,  :type => :string
+  option :rport, :type => :numeric, :default => 4005
+  option :lport, :type => :numeric, :default => 5005
+  def remote host, rport=5005, lport=4005
+    if File.exist? ".swank.remote.port"
+      lport, rport = File.readlines(".swank.remote.port")
+      lport = lport.to_i
+      rport = rport.to_i
+    end
+    cmd = "ssh -L#{lport}:localhost:#{rport} #{host}"
+    puts cmd
+    system cmd
+  end
+
   desc "swank", "Run lein deps, lein swank"
   option :port, :type => :numeric, :default => 4005
   def swank pport=4005
