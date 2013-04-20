@@ -1,6 +1,14 @@
 #!/bin/bash
-NAME="$1"
-PROJ="$2"
+if [ "$1" = "--here" ]; then
+  shift
+  NAME="$(basename $PWD)"
+else
+  NAME="$1"
+  shift
+fi
+
+PROJ="$1"
+shift
 
 function rn_create_named_screen() {
   if [ -n "$PROJ" ]; then
