@@ -5,11 +5,13 @@
    [aws.cf      :as cf]
    [aws.ec2     :as ec2]
    [clojure.pprint :as pp]
-   [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [org.httpkit.server :as httpkit])
   (:use
    [clojure.string :only [join]])
   (:gen-class))
 
+(declare routing-table)
 
 (defn route53-ls-zone [request]
   (let [zone-records (filter #(or (= "A" (:type %1)) (= "CNAME" (:type %1)))
@@ -81,14 +83,29 @@
     (doseq [instance-info (elb/instance-health elb-name)]
       (println (join "\t" (map instance-info [:instanceId :state]))))))
 
+(comment
+  (def elb-name "boom-prod-RelayEla-MICNJ7UKID0H")
+
+  (elb-ls-instances {:route-params {:name "boom-prod-RelayEla-MICNJ7UKID0H"}})
+
+  )
+
 (defn elb-ls-instances [request]
-  (let [elb-info (elb/load-balancer-for-resource-name (get-in request [:route-params :name]))]
+  ;; cross reference with instance health
+  (let [elb-name      (get-in request [:route-params :name])
+        elb-info      (elb/load-balancer-for-resource-name elb-name)
+        health-info   (reduce
+                       #(assoc %1 (:instanceId %2) %2)
+                       {}
+                       (elb/instance-health elb-name))]
+    (println (join "\t" ["instance-id" "public-dns-name" "public-ip" "privagte-ip" "status"]))
     (doseq [info (:instances elb-info)]
       (let [instance-info (ec2/instance-info (:instanceId info))]
-       (println (join "\t"
-                      (concat
-                       (map info [:instanceId])
-                       (map instance-info [:publicDnsName :publicIpAddress :privateIpAddress]))))))))
+        (println (join "\t"
+                       (concat
+                        (map info [:instanceId])
+                        (map instance-info [:publicDnsName :publicIpAddress :privateIpAddress])
+                        [(-> (:instanceId info) health-info :state)])))))))
 
 (defn cf-list-stacks [request]
   (doseq [stack (cf/stacks)]
@@ -128,6 +145,43 @@
                                                 (:value %1))
                                        (:tags instance-info))))]))))
 
+(defonce server (atom nil))
+
+(defn http-find-route [request]
+  (let [args (vec (rest (.split (-> request :uri) "/")))]
+    (or
+     (loop [[route & routes] routing-table]
+       (if (not route)
+         nil
+         (let [match-info (route-matches? route args)]
+           (if (not match-info)
+             (recur routes)
+             match-info))))
+     {:handler (fn [request] (show-routes))})))
+
+(defn run-server [request]
+  (let [async-handler (fn [ring-request]
+                        (httpkit/with-channel ring-request channel    ; get the channel
+                          (def rr ring-request)
+                          (let [matching-route (http-find-route ring-request)
+                                resp           (with-out-str
+                                                 ((:handler matching-route) matching-route))]
+                            (if (httpkit/websocket? channel) ; if you want to distinguish them
+                              (httpkit/on-receive channel (fn [data] ; two way communication
+                                                            (httpkit/send! channel data)))
+                              (httpkit/send! channel {:status 200
+                                                      :headers {"Content-Type" "text/plain"}
+                                                      :body    resp})))))]
+    (reset! server (httpkit/run-server async-handler {:port 3999}))))
+
+(comment
+  (do
+    (when @server
+      (@server))
+    (run-server {}))
+
+  )
+
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
       {:pattern ["route53" "ls" :name]                    :handler route53-ls-zone}
@@ -142,7 +196,8 @@
       {:pattern ["cf" "ls"]                               :handler cf-list-stacks}
       {:pattern ["cf" :name "instances"]                  :handler cf-list-stack-instances}
       {:pattern ["ec2" "ls"]                              :handler ec2-ls-instances}
-      {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}])
+      {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}
+      {:pattern ["server"]                                :handler run-server}])
 
 (defn show-routes []
   (doseq [route routing-table]
@@ -170,3 +225,10 @@
 
 
 
+(comment
+
+  (-main "elb" "boom-prod-RelayEla-MICNJ7UKID0H" "instances")
+
+  (-main "elb" "ls")
+
+  )
