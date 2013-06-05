@@ -149,21 +149,22 @@
 
 (defn http-find-route [request]
   (let [args (vec (rest (.split (-> request :uri) "/")))]
-    (or
-     (loop [[route & routes] routing-table]
-       (if (not route)
-         nil
-         (let [match-info (route-matches? route args)]
-           (if (not match-info)
-             (recur routes)
-             match-info))))
-     {:handler (fn [request] (show-routes))})))
+    (loop [[route & routes] routing-table]
+      (if (not route)
+        nil
+        (let [match-info (route-matches? route args)]
+          (if (not match-info)
+            (recur routes)
+            match-info))))))
 
 (defn run-server [request]
   (let [async-handler (fn [ring-request]
                         (httpkit/with-channel ring-request channel    ; get the channel
                           (def rr ring-request)
-                          (let [matching-route (http-find-route ring-request)
+                          (let [matching-route (or
+                                                (http-find-route ring-request)
+                                                {:handler (fn [request] (doseq [route routing-table]
+                                                                          (println (join " " (cons "aws" (:pattern route))))))})
                                 resp           (with-out-str
                                                  ((:handler matching-route) matching-route))]
                             (if (httpkit/websocket? channel) ; if you want to distinguish them
@@ -172,15 +173,8 @@
                               (httpkit/send! channel {:status 200
                                                       :headers {"Content-Type" "text/plain"}
                                                       :body    resp})))))]
-    (reset! server (httpkit/run-server async-handler {:port 3999}))))
-
-(comment
-  (do
-    (when @server
-      (@server))
-    (run-server {}))
-
-  )
+    (reset! server (httpkit/run-server async-handler {:port 3999}))
+    (println "Server running")))
 
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
