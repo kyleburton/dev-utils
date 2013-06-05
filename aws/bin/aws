@@ -18,8 +18,13 @@ make_lein_classpath () {
   popd
 }
 
-if curl http://localhost:3999 >/dev/null 2>/dev/null; then
-  URL="http://localhost:3999"
+PORT="$(cat ~/.aws/.port)"
+if [ -z "$PORT" ]; then
+  PORT="3999"
+fi
+
+if curl http://localhost:$PORT >/dev/null 2>/dev/null; then
+  URL="http://localhost:$PORT"
 
   while [ -n "$1" ]; do
     URL="$URL/$1"

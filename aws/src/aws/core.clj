@@ -158,8 +158,12 @@
             match-info))))))
 
 (defn run-server [request]
-  (let [async-handler (fn [ring-request]
-                        (httpkit/with-channel ring-request channel    ; get the channel
+  ;; ( def rr request)
+  (let [port          (if-let [port (-> request :route-params :port)]
+                        (Integer/parseInt port)
+                        3999)
+        async-handler (fn [ring-request]
+                        (httpkit/with-channel ring-request channel ; get the channel
                           (def rr ring-request)
                           (let [matching-route (or
                                                 (http-find-route ring-request)
@@ -173,8 +177,18 @@
                               (httpkit/send! channel {:status 200
                                                       :headers {"Content-Type" "text/plain"}
                                                       :body    resp})))))]
-    (reset! server (httpkit/run-server async-handler {:port 3999}))
-    (println "Server running")))
+    (spit (str (System/getenv "HOME") "/.aws/.port") (str port))
+    (reset! server (httpkit/run-server async-handler {:port port}))
+    (println (str "Server running on localhost:" port))))
+
+(comment
+
+  (do
+    (when @server
+      (@server))
+    (run-server {}))
+
+)
 
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
@@ -191,7 +205,8 @@
       {:pattern ["cf" :name "instances"]                  :handler cf-list-stack-instances}
       {:pattern ["ec2" "ls"]                              :handler ec2-ls-instances}
       {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}
-      {:pattern ["server"]                                :handler run-server}])
+      {:pattern ["server"]                                :handler run-server}
+      {:pattern ["server" :port]                          :handler run-server}])
 
 (defn show-routes []
   (doseq [route routing-table]
