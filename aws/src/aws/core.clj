@@ -177,6 +177,7 @@
                               (httpkit/send! channel {:status 200
                                                       :headers {"Content-Type" "text/plain"}
                                                       :body    resp})))))]
+    ;; NB: make the ~/.aws dir if necessary
     (spit (str (System/getenv "HOME") "/.aws/.port") (str port))
     (reset! server (httpkit/run-server async-handler {:port port}))
     (println (str "Server running on localhost:" port))))
