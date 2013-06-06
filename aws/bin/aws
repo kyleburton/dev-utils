@@ -14,11 +14,19 @@ resolve_symlink () {
 
 make_lein_classpath () {
   pushd $PROJ_HOME
-  lein classpath > $CPFILE
+  lein classpath | tail -n 1 > $CPFILE
   popd
 }
 
-PORT="$(cat ~/.aws/.port)"
+if [ ! -d  "$HOME/.aws" ]; then
+  mkdir ~/.aws
+fi
+
+if [ ! -e "$HOME/.aws/.port" ]; then
+  echo -n "3999" > ~/.aws/.port
+fi
+
+PORT="$(cat $HOME/.aws/.port)"
 if [ -z "$PORT" ]; then
   PORT="3999"
 fi
