@@ -13,9 +13,12 @@
 
 (declare routing-table)
 
+(defn zone-records [zone-name]
+  (filter #(or (= "A" (:type %1)) (= "CNAME" (:type %1)))
+          (route53/zone-records zone-name)))
+
 (defn route53-ls-zone [request]
-  (let [zone-records (filter #(or (= "A" (:type %1)) (= "CNAME" (:type %1)))
-                             (route53/zone-records (get-in request [:route-params :name])))]
+  (let [zone-records (zone-records (get-in request [:route-params :name]))]
     (doseq [zone-rec zone-records]
       (let [resource-name (.replaceAll (:name zone-rec) "\\.$" "")]
         (doseq [resource (:resourceRecords zone-rec)]
@@ -97,15 +100,29 @@
         health-info   (reduce
                        #(assoc %1 (:instanceId %2) %2)
                        {}
-                       (elb/instance-health elb-name))]
-    (println (join "\t" ["instance-id" "public-dns-name" "public-ip" "privagte-ip" "status"]))
+                       (elb/instance-health elb-name))
+        dns-info      (reduce
+                       #(assoc %1
+                          (->
+                           %2
+                           :resourceRecords
+                           first
+                           :value)
+                          (:name %2))
+                       {}
+                       (zone-records "ec2.relayzone.com"))]
+    (println (join "\t" ["instance-id" "public-dns-name" "public-ip" "privagte-ip" "status" "route53-dns-name"]))
     (doseq [info (:instances elb-info)]
-      (let [instance-info (ec2/instance-info (:instanceId info))]
+      (let [instance-info (ec2/instance-info (:instanceId info))
+            route53-name  (-> (:publicDnsName instance-info)
+                              dns-info)
+            route53-name  (.replaceAll route53-name "\\.$" "")]
         (println (join "\t"
                        (concat
                         (map info [:instanceId])
                         (map instance-info [:publicDnsName :publicIpAddress :privateIpAddress])
-                        [(-> (:instanceId info) health-info :state)])))))))
+                        [(-> (:instanceId info) health-info :state)
+                         route53-name])))))))
 
 (defn cf-list-stacks [request]
   (doseq [stack (cf/stacks)]
@@ -158,7 +175,6 @@
             match-info))))))
 
 (defn run-server [request]
-  ;; ( def rr request)
   (let [port          (if-let [port (-> request :route-params :port)]
                         (Integer/parseInt port)
                         3999)
@@ -189,7 +205,7 @@
       (@server))
     (run-server {}))
 
-)
+  )
 
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
