@@ -23,7 +23,7 @@ if [ -z "$PORT" ]; then
   PORT="3999"
 fi
 
-if curl http://localhost:$PORT >/dev/null 2>/dev/null; then
+if curl -s http://localhost:$PORT >/dev/null 2>/dev/null; then
   URL="http://localhost:$PORT"
 
   while [ -n "$1" ]; do
@@ -31,7 +31,7 @@ if curl http://localhost:$PORT >/dev/null 2>/dev/null; then
     shift
   done
 
-  curl $URL
+  curl -s $URL
   exit 0
 fi
 
