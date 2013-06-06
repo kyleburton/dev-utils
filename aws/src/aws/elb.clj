@@ -49,7 +49,6 @@
      (DeregisterInstancesFromLoadBalancerRequest.
       (:loadBalancerName elb-info)
       [(Instance. instance-id)])))
-  ;;(clj-etl-utils.cache-utils/purge-standard-caches)
   true)
 
 (defn register-instance [elb-dns-name instance-id]
@@ -60,7 +59,6 @@
      (RegisterInstancesWithLoadBalancerRequest.
       (:loadBalancerName elb-info)
       [(Instance. instance-id)])))
-  ;;(clj-etl-utils.cache-utils/purge-standard-caches)
   true)
 
 (defn instance-health [elb-dns-name]
@@ -99,7 +97,3 @@
         :not-yet-in-service
         (do
           (recur (instance-health elb-name)))))))
-
-
-
-
