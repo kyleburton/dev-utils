@@ -2,6 +2,10 @@ $config = {
   'Linux' => {
      :pkg_url  => "https://go.googlecode.com/files/go1.1.linux-amd64.tar.gz",
      :pkg_sha1 => "58087060236614f13d7089d798055b4255ed02ec"
+  },
+  'Darwin' => {
+     :pkg_url  => "https://go.googlecode.com/files/go1.1.darwin-amd64.tar.gz",
+     :pkg_sha1 => "d4dcf2c42ed465731d3050265ac4cf10acf11c15"
   }
 }
 
@@ -10,7 +14,11 @@ def platform
 end
 
 def config
-  $config[platform]
+  c = $config[platform]
+  unless c
+    raise "Error: no configuration for this platform: '#{platform}'"
+  end
+  c
 end
 
 def pkg_url
