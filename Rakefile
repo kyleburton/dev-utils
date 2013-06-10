@@ -35,7 +35,8 @@ class DevUtilsHelper
       {:name => 'emacs-cli',
        :binaries => Dir["emacs-cli/bin/*"].map {|f| File.basename(f)}},
       {:name => 'auto-swank',
-       :binaries => Dir["auto-swank/bin/*"].map {|f| File.basename(f)}}
+       :binaries => Dir["auto-swank/bin/*"].map {|f| File.basename(f)}},
+      {:name => 'instago', :install => ['rake install']}
     ]
   end
 
@@ -46,7 +47,7 @@ class DevUtilsHelper
     end
 
     @utilities.each do |util|
-      util[:binaries].each do |bin|
+      (util[:binaries]||[]).each do |bin|
         src_file  = File.join($proj_root,util[:name],'bin',bin)
         dest_file = File.join(bin_dir,bin)
         if File.exist? dest_file
@@ -56,10 +57,15 @@ class DevUtilsHelper
           FileUtils.ln_s src_file, dest_file
         end
       end
+
       Dir.chdir(util[:name]) do |p|
         if File.exist? "Gemfile"
           puts "running bundler for #{util[:name]}..."
           system "bundle install"
+        end
+
+        (util[:install]||[]).each do |cmd|
+          system cmd
         end
       end
     end
