@@ -207,6 +207,10 @@
 
   )
 
+(defn flush-caches [request]
+  (let [num-cleared (aws.util/expire-all-caches!)]
+    (println (format "%d cache entries removed." num-cleared))))
+
 (def routing-table
      [{:pattern ["route53" "ls"]                          :handler route53-ls}
       {:pattern ["route53" "ls" :name]                    :handler route53-ls-zone}
@@ -223,7 +227,8 @@
       {:pattern ["ec2" "ls"]                              :handler ec2-ls-instances}
       {:pattern ["ec2" "ls" :name]                        :handler ec2-instance-info}
       {:pattern ["server"]                                :handler run-server}
-      {:pattern ["server" :port]                          :handler run-server}])
+      {:pattern ["server" :port]                          :handler run-server}
+      {:pattern ["flush" "caches"]                        :handler flush-caches}])
 
 (defn show-routes []
   (doseq [route routing-table]

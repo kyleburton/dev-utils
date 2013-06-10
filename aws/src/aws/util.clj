@@ -27,21 +27,33 @@
   (> (- (.getTime (java.util.Date.)) (.lastModified (java.io.File. f)))
      (* 600 1000)))
 
+(defn default-cache-dir []
+  (format  "%s/%s"
+           (java.lang.System/getenv "HOME")
+           ".etl.fn.cache"))
+
 (defmacro def-disk-cache [fn-name arg-spec & body]
   `(def ~fn-name
         (wrap-disk-cache
          {:cache-dir
-          (format  "%s/%s/%s/%s"
-                   (java.lang.System/getenv "HOME")
-                   ".etl.fn.cache"
+          (format  "%s/%s/%s"
+                   (default-cache-dir)
                    (str *ns*)
                    (str '~fn-name))
           :exp-fn  is-file-older-than-10-min?}
          (fn ~arg-spec
            ~@body))))
 
+(defn expire-all-caches! []
+  (let [cache-files (filter #(.isFile %1) (file-seq (java.io.File. (default-cache-dir))))]
+    (doseq [f cache-files]
+      (.delete f))
+    (count cache-files)))
+
 
 (comment
+
+  (expire-all-caches!)
 
   (def-disk-cache some-function [stuff]
     (println (format "Stuff: %s" stuff))

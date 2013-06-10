@@ -1,5 +1,67 @@
-h1. aws command line tool
+h1. aws command line information tool
 
 Uses the "AWS Java SDK":http://aws.amazon.com/sdkforjava/
+
+h2. Supported Commands
+
+h3. Route53
+
+    aws route53 ls
+    aws route53 ls :name
+
+h3. Elastic Load Balancers (ELB)
+
+    aws elb ls
+    aws elb ls :name
+    aws elb :name remove :instance
+    aws elb :name add :instance
+    aws elb :name remove-and-wait :instance
+    aws elb :name add-and-wait :instance
+    aws elb :name health
+    aws elb :name instances
+
+h3. Cloud Formation (CF)
+
+    aws cf ls
+    aws cf :name instances
+
+h3. Elastic Compute Cloud (EC2)
+
+    aws ec2 ls
+    aws ec2 ls :name
+
+h3. Cache Flushing
+
+    aws flush caches
+
+This immediately clears all entries from the internal caches used by this tool (see 'Server Mode' below).
+
+h3. Server Mode
+
+    aws server
+    aws server :port
+
+The `aws` command line tool supports running in a 'server' mode to improve the performance of the tool.
+
+There are a few caveats to using this mode:
+
+h5. Error Messages and Exceptions
+
+Error messages are not sent to the command line, only normal output.
+
+
+h5. Caching of API Call Data
+
+The following api calls are cached (for up to 10 minutes) by the server code:
+
+* aws.cf/stacks
+* aws.cf/resources
+* aws.ec2/instance-info
+* aws.ec2/all-instances
+* aws.elb/load-balancers
+* aws.route53/hosted-zones
+* aws.route53/zone-records
+
+You can remove these entries with the `flush caches` command.
 
 h1. License
