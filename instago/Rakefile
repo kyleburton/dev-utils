@@ -1,0 +1,69 @@
+$config = {
+  'Linux' => {
+     :pkg_url  => "https://go.googlecode.com/files/go1.1.linux-amd64.tar.gz",
+     :pkg_sha1 => "58087060236614f13d7089d798055b4255ed02ec"
+  }
+}
+
+def platform
+  @platform ||= `uname`.chomp!
+end
+
+def config
+  $config[platform]
+end
+
+def pkg_url
+  config[:pkg_url]
+end
+
+def pkg_file
+  File.basename(pkg_url)
+end
+
+def pkg_dir
+  File.basename(pkg_url, ".tar.gz")
+end
+
+def pkg_sha1
+  config[:pkg_sha1]
+end
+
+def chdir! p
+  unless File.exist? p
+    Dir.mkdir p
+  end
+  Dir.chdir(p) do |p|
+    yield p
+  end
+end
+
+def system! *cmd
+  cmd = cmd.join(" ")
+  res = system cmd
+  unless res
+    raise "Error running command: '#{cmd}' : #$!" 
+  end
+  true
+end
+
+desc "Install the current go"
+task :install do
+  chdir! "software" do
+    unless File.exist? pkg_file
+      system! "curl", "-o", pkg_file, pkg_url
+    end
+
+    unless File.exist? "go"
+      system! "tar", "xzvf", pkg_file
+    end
+  end
+
+  File.open('go.env', 'w') do |f|
+    cwd = Dir.pwd
+    go_root = "#{cwd}/software/go"
+    f.puts "export GOROOT=#{go_root}"
+    f.puts "export GOPATH=#{cwd}/go-packages"
+    f.puts "export PATH=$PATH:$GOROOT/bin"
+  end
+end
