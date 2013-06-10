@@ -6,11 +6,14 @@ h2. Supported Commands
 
 h3. Route53
 
+<pre>
     aws route53 ls
     aws route53 ls :name
+</pre>
 
 h3. Elastic Load Balancers (ELB)
 
+<pre>
     aws elb ls
     aws elb ls :name
     aws elb :name remove :instance
@@ -19,29 +22,38 @@ h3. Elastic Load Balancers (ELB)
     aws elb :name add-and-wait :instance
     aws elb :name health
     aws elb :name instances
+</pre>
 
 h3. Cloud Formation (CF)
 
+<pre>
     aws cf ls
     aws cf :name instances
+</pre>
 
 h3. Elastic Compute Cloud (EC2)
 
+<pre>
     aws ec2 ls
     aws ec2 ls :name
+</pre>
 
 h3. Cache Flushing
 
+<pre>
     aws flush caches
+</pre>
 
 This immediately clears all entries from the internal caches used by this tool (see 'Server Mode' below).
 
 h3. Server Mode
 
+<pre>
     aws server
     aws server :port
+</pre>
 
-The `aws` command line tool supports running in a 'server' mode to improve the performance of the tool.
+The @aws@ command line tool supports running in a 'server' mode to improve the performance of the tool.
 
 There are a few caveats to using this mode:
 
@@ -62,6 +74,6 @@ The following api calls are cached (for up to 10 minutes) by the server code:
 * aws.route53/hosted-zones
 * aws.route53/zone-records
 
-You can remove these entries with the `flush caches` command.
+You can remove these entries with the @flush caches@ command.
 
 h1. License
