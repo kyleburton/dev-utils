@@ -18,7 +18,7 @@ function rn_create_named_screen() {
       cd $HOME/projects/$PROJ
     fi
   fi
-  screen -S "$NAME"
+  exec screen -S "$NAME"
 }
 
 if [ -z "$NAME" ]; then
@@ -28,11 +28,7 @@ if [ -z "$NAME" ]; then
 fi
 
 if screen -ls | grep -q "$NAME"; then
-  if screen -x "$NAME"; then
-    exit $?
-  else
-    rn_create_named_screen
-  fi
+  exec screen -x "$NAME"
 else
   rn_create_named_screen
 fi
