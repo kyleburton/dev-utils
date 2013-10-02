@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'base_app'
+require 'open3'
+require 'tempfile'
 
 class AutoJSLint < BaseApp
   def initialize
@@ -9,6 +11,7 @@ class AutoJSLint < BaseApp
 
   def command_line_arguments
     super.concat([
+                 ['b','batch','Expiremntal `batch` mode'],
                  ['w','watch','Interactively Watch until all js lint errors are fixed.'],
                  ['n','dryrun','Show what it would do, but do not do it.']
     ])
@@ -80,12 +83,58 @@ class AutoJSLint < BaseApp
     end
   end
 
+  def lint_all_files_at_once argv
+    @results = []
+    @stats = {:passed => 0, :failed => 0, :total => 0}
+    all_js_files = find_js_files(argv)
+    output = ''
+    errout = ''
+    exit_status = nil
+    cmd = "jslint #{all_js_files.map {|x| "'#{x}'"}.join(' ')}"
+    puts "CMD: #{cmd}"
+    Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
+      pid = wait_thr.pid
+      exit_status = wait_thr.value
+      output = stdout.read
+      errout = stderr.read
+    end
+
+    parts = output.split("\n\n")
+    puts "There are #{parts.size} parts"
+    parts.each do |result|
+      lines = result.split("\n")
+      lines.shift while lines[0] && lines[0] =~ /^\s*$/
+      jsfile = lines[0]
+      # puts "PART[#{jsfile}]:\n>>>#{result}<<<\n"
+      info = {:file => jsfile, :output => result, :result => $?}
+      @results << info
+      unless result.empty?
+        puts result
+      end
+      #require 'ruby-debug'; debugger;
+      if (result.empty? || result.include?("js is OK."))
+        puts "# PASS: #{jsfile}"
+        info[:passed] = true
+        info[:failed] = false
+        @stats[:passed] += 1
+      else
+        info[:passed] = false
+        info[:failed] = true
+        @stats[:failed] += 1
+      end
+      @stats[:total] += 1
+    end
+  end
+
   def wait_for_user_to_fix_everything
-    file = Tempfile.new('jslint.fixup')
+    tfile = Tempfile.new('jslint.fixup')
+    file = tfile.path
     File.open(file, "w") do |f|
       emit_fixup_script f
     end
-    system "watch", "-d", "-n2", "bash", file
+    cmd = "watch -d -n2 bash #{file}"
+    # require 'ruby-debug'; debugger;
+    system cmd
     file.unlink
   end
 
@@ -119,7 +168,11 @@ class AutoJSLint < BaseApp
       return
     end
 
-    lint_all_files ARGV
+    if self.batch
+      lint_all_files_at_once ARGV
+    else
+      lint_all_files ARGV
+    end
 
     puts "# #{@stats[:total]} files checked, #{@stats[:passed]} linted, #{@stats[:failed]} did not"
     if @stats[:failed] > 0
