@@ -1,0 +1,1 @@
+echo $(grep 'name = ' ~/.gitconfig | cut -f2 -d '=')

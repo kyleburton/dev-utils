@@ -32,6 +32,8 @@ class DevUtilsHelper
        :binaries => %w[browserstack-tunnel]},
       {:name => 'auto-jslint',
        :binaries => %w[auto-jslint]},
+      {:name => 'bash-utils',
+       :binaries => %w[rn_pair_name]},
       {:name => 'emacs-cli',
        :binaries => Dir["emacs-cli/bin/*"].map {|f| File.basename(f)}},
       {:name => 'auto-swank',
