@@ -11,3 +11,4 @@ bin/.lein-classpath
 *~
 screenlog.?
 out.txt
+target/
