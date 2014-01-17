@@ -6,6 +6,8 @@ $proj_root = File.dirname(__FILE__)
 class DevUtilsHelper
   def initialize
     @utilities = [
+      {:name => 'bash-utils',
+       :binaries => %w[isodate]},
       {:name => 'make-checkouts',
        :binaries => %w[make-checkouts]},
       {:name => 'named-screen',
