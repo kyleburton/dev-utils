@@ -30,6 +30,7 @@ class Jenkins
     if @config[:htauth]
       @ua.add_auth(@config[:base_url],@config[:htauth][:user],@config[:htauth][:pass])
     end
+    @ua.agent.http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     super
   end
 

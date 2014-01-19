@@ -6,6 +6,8 @@ $proj_root = File.dirname(__FILE__)
 class DevUtilsHelper
   def initialize
     @utilities = [
+      {:name => 'bash-utils',
+       :binaries => %w[isodate]},
       {:name => 'make-checkouts',
        :binaries => %w[make-checkouts]},
       {:name => 'named-screen',
@@ -32,6 +34,8 @@ class DevUtilsHelper
        :binaries => %w[browserstack-tunnel]},
       {:name => 'auto-jslint',
        :binaries => %w[auto-jslint]},
+      {:name => 'bash-utils',
+       :binaries => %w[rn_pair_name]},
       {:name => 'emacs-cli',
        :binaries => Dir["emacs-cli/bin/*"].map {|f| File.basename(f)}},
       {:name => 'auto-swank',

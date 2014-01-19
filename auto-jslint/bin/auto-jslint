@@ -69,7 +69,7 @@ class AutoJSLint < BaseApp
       unless result.empty?
         puts result
       end
-      if $? && (result.empty? || result.include?("js is OK."))
+      if $? && (result.empty? || result.include?("js is OK.") || result.include?("json is OK."))
         puts "# PASS: #{jsfile}"
         info[:passed] = true
         info[:failed] = false
@@ -93,8 +93,9 @@ class AutoJSLint < BaseApp
     cmd = "jslint #{all_js_files.map {|x| "'#{x}'"}.join(' ')}"
     puts "CMD: #{cmd}"
     Open3.popen3(cmd) do |stdin, stdout, stderr, wait_thr|
-      pid = wait_thr.pid
-      exit_status = wait_thr.value
+      #require 'ruby-debug'; debugger;
+      #pid = wait_thr.pid
+      #exit_status = wait_thr.value
       output = stdout.read
       errout = stderr.read
     end

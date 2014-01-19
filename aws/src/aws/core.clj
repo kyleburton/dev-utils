@@ -111,7 +111,7 @@
                           (:name %2))
                        {}
                        (zone-records "ec2.relayzone.com"))]
-    (println (join "\t" ["instance-id" "public-dns-name" "public-ip" "privagte-ip" "status" "route53-dns-name"]))
+    #_(println (join "\t" ["instance-id" "public-dns-name" "public-ip" "privagte-ip" "status" "route53-dns-name"]))
     (doseq [info (:instances elb-info)]
       (let [instance-info (ec2/instance-info (:instanceId info))
             route53-name  (-> (:publicDnsName instance-info)
