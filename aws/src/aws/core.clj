@@ -86,13 +86,6 @@
     (doseq [instance-info (elb/instance-health elb-name)]
       (println (join "\t" (map instance-info [:instanceId :state]))))))
 
-(comment
-  (def elb-name "boom-prod-RelayEla-MICNJ7UKID0H")
-
-  (elb-ls-instances {:route-params {:name "boom-prod-RelayEla-MICNJ7UKID0H"}})
-
-  )
-
 (defn elb-ls-instances [request]
   ;; cross reference with instance health
   (let [elb-name      (get-in request [:route-params :name])

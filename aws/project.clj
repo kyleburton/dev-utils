@@ -6,7 +6,7 @@
     [org.clojure/clojure                  "1.5.1"]
     [org.clojure/data.json                "0.2.2"]
     [org.clojure/tools.cli                "0.2.1"]
-    [com.amazonaws/aws-java-sdk           "1.6.10"]
-    [com.github.kyleburton/clj-etl-utils  "1.0.79"]
+    [com.amazonaws/aws-java-sdk           "1.7.2"]
+    [com.github.kyleburton/clj-etl-utils  "1.0.83"]
     [http-kit                             "2.1.15"]
   ])
