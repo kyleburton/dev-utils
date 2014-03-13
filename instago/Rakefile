@@ -76,6 +76,6 @@ task :install do
     go_root = "#{cwd}/software/go"
     f.puts "export GOROOT=#{go_root}"
     f.puts "export GOPATH=#{cwd}/go-packages"
-    f.puts "export PATH=$PATH:$GOROOT/bin"
+    f.puts "export PATH=$PATH:$GOROOT/bin:$GOPATH/bin"
   end
 end
