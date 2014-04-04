@@ -1,7 +1,12 @@
 $config = {
   'Linux' => {
-     :pkg_url  => "https://go.googlecode.com/files/go1.1.linux-amd64.tar.gz",
-     :pkg_sha1 => "58087060236614f13d7089d798055b4255ed02ec"
+    # 1.2.1
+      :pkg_url  => "https://go.googlecode.com/files/go1.2.1.linux-amd64.tar.gz",
+      :pkg_sha1 => "7605f577ff6ac2d608a3a4e829b255ae2ebc8dcf"
+    
+    # 1.1
+     # :pkg_url  => "https://go.googlecode.com/files/go1.1.linux-amd64.tar.gz",
+     # :pkg_sha1 => "58087060236614f13d7089d798055b4255ed02ec"
   },
   'Darwin' => {
      :pkg_url  => "https://go.googlecode.com/files/go1.1.darwin-amd64.tar.gz",
@@ -67,11 +72,11 @@ task :install do
     end
   end
 
-  File.open('go.env', 'w') do |f|
+  File.open('env.go', 'w') do |f|
     cwd = Dir.pwd
     go_root = "#{cwd}/software/go"
     f.puts "export GOROOT=#{go_root}"
     f.puts "export GOPATH=#{cwd}/go-packages"
-    f.puts "export PATH=$PATH:$GOROOT/bin:$GOPATH/bin"
+    f.puts "export PATH=$GOROOT/bin:$PATH"
   end
 end
