@@ -9,8 +9,10 @@ $config = {
      # :pkg_sha1 => "58087060236614f13d7089d798055b4255ed02ec"
   },
   'Darwin' => {
-     :pkg_url  => "https://go.googlecode.com/files/go1.1.darwin-amd64.tar.gz",
-     :pkg_sha1 => "d4dcf2c42ed465731d3050265ac4cf10acf11c15"
+     #:pkg_url  => "https://go.googlecode.com/files/go1.1.darwin-amd64.tar.gz",
+     #:pkg_sha1 => "d4dcf2c42ed465731d3050265ac4cf10acf11c15"
+     :pkg_url  => "http://go.googlecode.com/files/go1.2.1.darwin-amd64-osx10.8.tar.gz",
+     :pkg_sha1 => "da48bfa2f31c32d779dc99564324ec25a20f8e3c"
   }
 }
 

@@ -15,14 +15,14 @@
 
 (def elb-client (AmazonElasticLoadBalancingClient. aws-credentials))
 
+(defn load-balancers-impl []
+  (vec (map rec-bean
+            (.. elb-client
+                describeLoadBalancers
+                getLoadBalancerDescriptions))))
+
 (def-disk-cache load-balancers []
-  (vec (map rec-bean (.getLoadBalancerDescriptions (.describeLoadBalancers elb-client)))))
-
-;; (first (filter #(= "boom-prod-RelayEla-MICNJ7UKID0H" (:loadBalancerName %1)) (map bean (load-balancers))))
-;;(map bean (load-balancers))
-
-;; (load-balancer-for-dns-name "boom-prod.ec2.relayzone.com")
-;; (:resourceRecords (first (route53/records-for-resource "boom-prod.ec2.relayzone.com")))
+  (load-balancers-impl))
 
 (defn load-balancer-for-dns-name [resource-name]
   (let [elb-info      (first (:resourceRecords (first (route53/records-for-resource resource-name))))
