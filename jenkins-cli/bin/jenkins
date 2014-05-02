@@ -247,7 +247,6 @@ class Jenkins
 
   def latest_build_id project
     info = get_project_info(project)
-    require 'ruby-debug'; debugger; 1;
     if info[:builds] && info[:builds].first
       num = info[:builds].first[:number]
       if num.kind_of?(Array)
@@ -267,7 +266,6 @@ class Jenkins
     end
 
     build = latest_build_id(project)
-    require 'ruby-debug'; debugger; 1;
     puts "get me #{project}/#{build}"
     resp = raw_get "/job/#{project}/#{build}/consoleText"
     puts resp.body
