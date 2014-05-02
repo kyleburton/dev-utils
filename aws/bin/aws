@@ -15,6 +15,7 @@ resolve_symlink () {
 make_lein_classpath () {
   pushd $PROJ_HOME
   lein classpath | tail -n 1 > $CPFILE
+  lein deps
   popd
 }
 
