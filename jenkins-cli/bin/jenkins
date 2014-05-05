@@ -121,6 +121,7 @@ class Jenkins
   end
 
   def cmd_ls
+    puts String.colors.inspect
     detailed_projects_list.each do |pinfo|
       status = pinfo[:status]
       succeeded = status == "Success"
@@ -128,6 +129,8 @@ class Jenkins
         status = status.green
       elsif status == "In progress"
         status = status.blue
+      elsif status == "Disabled"
+        status = status.light_green
       else
         status = status.red
       end
