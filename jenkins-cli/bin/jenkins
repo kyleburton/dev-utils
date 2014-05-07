@@ -121,9 +121,10 @@ class Jenkins
   end
 
   def cmd_ls
-    puts String.colors.inspect
+    status_counts = {}
     detailed_projects_list.each do |pinfo|
       status = pinfo[:status]
+      status_counts[status] = 1 + (status_counts[status] || 0)
       succeeded = status == "Success"
       if status == "Success"
         status = status.green
@@ -136,6 +137,10 @@ class Jenkins
       end
       output_cmd = succeeded ? "" : "# jenkins output #{pinfo[:name]}".yellow
       puts "#{pinfo[:name]}\t#{status}\t#{output_cmd}"
+    end
+    puts "\n"
+    status_counts.keys.sort.each do |status|
+      puts [status, status_counts[status]].reverse.join("\t")
     end
   end
   
