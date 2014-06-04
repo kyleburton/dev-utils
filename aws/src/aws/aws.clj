@@ -3,7 +3,7 @@
    [clj-etl-utils.lang-utils :only [raise]]))
 
 (defn aws-credentials-info []
-  (let [cred-info (slurp (format "%s/.aws/credentials" (java.lang.System/getenv "HOME")))]
+  (let [cred-info (slurp (format "%s/.aws/rn-credentials" (java.lang.System/getenv "HOME")))]
     (reduce
      (fn [m line]
        (let [[k v] (.split line "=")]
