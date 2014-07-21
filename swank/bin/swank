@@ -6,4 +6,5 @@ fi
 
 PORT="$(open-port)"
 echo "$PORT" > .swank.port
+echo lein swank $PORT
 lein swank $PORT
