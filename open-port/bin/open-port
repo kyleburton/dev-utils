@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# set -exu
+resolve_symlink () {
+  F="$1"
+  while [ -h "$F" ]; do
+    F=$(readlink $F)
+  done
+  echo "$F"
+}
+
+SELF="$(resolve_symlink $0)"
+BASED="$(dirname $SELF)/.."
+
+go run $BASED/main.go
+

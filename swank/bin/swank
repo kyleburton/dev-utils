@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+if [ ! -e project.clj ]; then
+  echo "There's no project.clj file in $PWD, probably not the right place to run 'lein swank'"
+  exit 1
+fi
+
+PORT="$(open-port)"
+echo "$PORT" > .swank.port
+lein swank $PORT
