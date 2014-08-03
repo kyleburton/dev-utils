@@ -1,8 +1,12 @@
+require 'fileutils'
 $config = {
   'Linux' => {
+    # 1.3
+    :pkg_url  => "https://storage.googleapis.com/golang/go1.3.linux-amd64.tar.gz", # "http://golang.org/dl/go1.3.linux-amd64.tar.gz",
+    :pkg_sha1 => "b6b154933039987056ac307e20c25fa508a06ba6"
     # 1.2.1
-      :pkg_url  => "https://go.googlecode.com/files/go1.2.1.linux-amd64.tar.gz",
-      :pkg_sha1 => "7605f577ff6ac2d608a3a4e829b255ae2ebc8dcf"
+      # :pkg_url  => "https://go.googlecode.com/files/go1.2.1.linux-amd64.tar.gz",
+      # :pkg_sha1 => "7605f577ff6ac2d608a3a4e829b255ae2ebc8dcf"
     
     # 1.1
      # :pkg_url  => "https://go.googlecode.com/files/go1.1.linux-amd64.tar.gz",
@@ -11,8 +15,10 @@ $config = {
   'Darwin' => {
      #:pkg_url  => "https://go.googlecode.com/files/go1.1.darwin-amd64.tar.gz",
      #:pkg_sha1 => "d4dcf2c42ed465731d3050265ac4cf10acf11c15"
-     :pkg_url  => "http://go.googlecode.com/files/go1.2.1.darwin-amd64-osx10.8.tar.gz",
-     :pkg_sha1 => "da48bfa2f31c32d779dc99564324ec25a20f8e3c"
+     #:pkg_url  => "http://go.googlecode.com/files/go1.2.1.darwin-amd64-osx10.8.tar.gz",
+     #:pkg_sha1 => "da48bfa2f31c32d779dc99564324ec25a20f8e3c"
+     :pkg_url  => "https://storage.googleapis.com/golang/go1.3.darwin-amd64-osx10.8.tar.gz", # "http://golang.org/dl/go1.3.darwin-amd64-osx10.8.tar.gz",
+     :pkg_sha1 => "4e8f2cafa23797211fd13f3fa4893ce3d5f084c4"
   }
 }
 
@@ -81,4 +87,9 @@ task :install do
     f.puts "export GOPATH=#{cwd}/go-packages"
     f.puts "export PATH=$GOROOT/bin:$GOPATH/bin:$PATH"
   end
+end
+
+desc "remove the current go"
+task :uninstall do
+  FileUtils.rm_rf "software/go"
 end
