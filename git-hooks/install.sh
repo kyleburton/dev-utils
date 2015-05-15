@@ -24,3 +24,21 @@ rm -f ~/projects/rn-client-portal/.git/hooks/pre-commit
 echo '#!/bin/sh' >> ~/projects/rn-client-portal/.git/hooks/pre-commit
 cat set-pair-precommit.sh >> ~/projects/rn-client-portal/.git/hooks/pre-commit
 chmod +x ~/projects/rn-client-portal/.git/hooks/pre-commit
+
+# rn-oltp-services
+rm -f ~/projects/rn-oltp-services/.git/hooks/pre-commit
+echo '#!/bin/sh' >> ~/projects/rn-oltp-services/.git/hooks/pre-commit
+cat set-pair-precommit.sh >> ~/projects/rn-oltp-services/.git/hooks/pre-commit
+chmod +x ~/projects/rn-oltp-services/.git/hooks/pre-commit
+
+# rn-spec-repo
+rm -f ~/projects/rn-spec-repo/.git/hooks/pre-commit
+echo '#!/bin/sh' >> ~/projects/rn-spec-repo/.git/hooks/pre-commit
+cat set-pair-precommit.sh >> ~/projects/rn-spec-repo/.git/hooks/pre-commit
+chmod +x ~/projects/rn-spec-repo/.git/hooks/pre-commit
+
+# rn-web-specs
+rm -f ~/projects/rn-web-specs/.git/hooks/pre-commit
+echo '#!/bin/sh' >> ~/projects/rn-web-specs/.git/hooks/pre-commit
+cat set-pair-precommit.sh >> ~/projects/rn-web-specs/.git/hooks/pre-commit
+chmod +x ~/projects/rn-web-specs/.git/hooks/pre-commit
