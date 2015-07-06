@@ -113,7 +113,7 @@ class AutoJSLint < BaseApp
         puts result
       end
       #require 'ruby-debug'; debugger;
-      if (result.empty? || result.include?("js is OK."))
+      if (result.empty? || result.include?("js is OK.") || result.include?("json is OK."))
         puts "# PASS: #{jsfile}"
         info[:passed] = true
         info[:failed] = false
