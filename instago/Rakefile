@@ -17,8 +17,13 @@ $config = {
      #:pkg_sha1 => "d4dcf2c42ed465731d3050265ac4cf10acf11c15"
      #:pkg_url  => "http://go.googlecode.com/files/go1.2.1.darwin-amd64-osx10.8.tar.gz",
      #:pkg_sha1 => "da48bfa2f31c32d779dc99564324ec25a20f8e3c"
-     :pkg_url  => "https://storage.googleapis.com/golang/go1.3.darwin-amd64-osx10.8.tar.gz", # "http://golang.org/dl/go1.3.darwin-amd64-osx10.8.tar.gz",
-     :pkg_sha1 => "4e8f2cafa23797211fd13f3fa4893ce3d5f084c4"
+     #:pkg_url  => "https://storage.googleapis.com/golang/go1.3.darwin-amd64-osx10.8.tar.gz", # "http://golang.org/dl/go1.3.darwin-amd64-osx10.8.tar.gz",
+     #:pkg_sha1 => "4e8f2cafa23797211fd13f3fa4893ce3d5f084c4"
+     #:pkg_url  => "https://storage.googleapis.com/golang/go1.5.1.darwin-amd64.tar.gz",
+     #:pkg_sha1 => "02451b1f3b2c715edc5587174e35438982663672"
+
+     :pkg_url  => "https://storage.googleapis.com/golang/go1.5.3.darwin-amd64.pkg",
+     :pkg_sha1 => "9df7716f777e46fa6b54f1cf7324f7ab81ff6789"
   }
 }
 
